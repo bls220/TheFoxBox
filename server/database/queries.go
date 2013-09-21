@@ -55,27 +55,21 @@ func convSongs(rows *sql.Rows) []dt.Song{
 	for rows.Next() {
 		song := dt.Song{}
 		rows.Scan(&song.Id,&song.Title)
-		fmt.Println(song)
 		songs = append(songs,song)
 	}
 	return songs
 }
 
-func GetSongByChaos(num int){
+func GetSongsByChaos(num int) []dt.Song{
+	songs := []dt.Song{}
 	f := func(db *sql.DB) bool {
-		/*stmt := db.Prepare()
-		stmt.Exec()
-
-
-
-		if for some reason we fail {
-			return true
-		}
-		return false*/
-		return false
+		rows, err := db.Query(fmt.Sprintf("select * from song order by RANDOM() limit %d",num))
+		defer rows.Close()
+		songs = convSongs(rows)
+		return err != nil
 	}
-
 	doTransaction(f)
+	return songs
 }
 
 // Returns true on error (transaction should be rolled back)
