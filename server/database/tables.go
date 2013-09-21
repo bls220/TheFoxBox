@@ -27,14 +27,14 @@ func CreateSongTable(){
 	createTable(
 		`create table song (
 			id 		integer not null primary key, 
-			name 	text
+			title 	text
 			);
 		delete from song;`)
 }
 
-func CreateMoodTable(){
+func CreateVoteTable(){
 	createTable(
-		`create table mood (
+		`create table vote (
 			id		integer not null primary key, 
 			song 	references song(id),
 			user 	references user(id),
@@ -43,7 +43,7 @@ func CreateMoodTable(){
 			g 		integer,
 			b  		integer
 			);
-		delete from song;`)
+		delete from vote;`)
 }
 
 

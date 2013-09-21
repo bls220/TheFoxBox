@@ -8,7 +8,7 @@ func Test() {
 	DestroyDB()
 	CreateUserTable()
 	CreateSongTable()
-	CreateMoodTable()
+	CreateVoteTable()
 	AddSong(dt.Song{Title: "What the frog says"})
 	GetSongs();
 

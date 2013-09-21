@@ -17,32 +17,38 @@ func AddUser(user dt.User){
 
 func AddSong(song dt.Song){
 	f := func(db *sql.DB) bool {
-		_, err := db.Exec(fmt.Sprintf("insert into song(name) values('%s')",song.Title));
+		_, err := db.Exec(fmt.Sprintf("insert into song(title) values('%s')",song.Title));
 		return err != nil
 	}
 	doTransaction(f)
 }
 
-func AddUserSong(user dt.User, mood dt.Mood, ){
+func AddVote(user dt.User, mood dt.Mood, Song dt.Song){
 
+	f := func(db *sql.DB) bool {
+		_, err := db.Exec(fmt.Sprintf("insert into mood(song) values('%s')",song.Title));
+		return err != nil
+	}
+	doTransaction(f)
 }
 func GetSongByName(name string){
 
 }
 
 func GetSongByMoodAndRoom(mood dt.Mood, room dt.Room){
-	
+
 } 
 
 func GetSongs(){
+
 	f := func(db *sql.DB) bool {
-		rows, err := db.Query("select id, name from song")
+		rows, err := db.Query("select id, title from song")
 		defer rows.Close()
 		for rows.Next() {
 			var id int
-			var name string
-			rows.Scan(&id, &name)
-			fmt.Println(id, name)
+			var title string
+			rows.Scan(&id, &title)
+			fmt.Println(id, title)
 		}
 		return err != nil
 	}
