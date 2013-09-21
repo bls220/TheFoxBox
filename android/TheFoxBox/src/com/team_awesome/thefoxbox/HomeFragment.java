@@ -19,8 +19,6 @@ import android.widget.ListView;
  */
 public class HomeFragment extends Fragment implements QueryCallbacks {
 
-	private static String mAuthCode = "";
-
 	private SongAdapter adapterNowPlaying;
 
 	/**
@@ -55,7 +53,6 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 	@Override
 	public void loginCallback(String authToken) {
 		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
-		mAuthCode = authToken;
 	}
 
 	@Override
