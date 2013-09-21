@@ -15,25 +15,24 @@ func AddUser(user dt.User){
 	
 }
 
-func AddSongs(songs []dt.Song){
-	f := func(db *sql.DB) bool {
+func AddSongs(songs []dt.Song) error {
+	f := func(db *sql.DB) error {
 		for _, x := range songs {
 			if _, err := db.Exec(fmt.Sprintf("insert into song(title) values('%s')",x.Title)); err != nil {
-				return true
+				return err
 			}
 		}
-		return true
+		return nil
 	}
-	doTransaction(f)
+	return doTransaction(f)
 }
 
-func AddVote(vote dt.Vote){
-
-	f := func(db *sql.DB) bool {
+func AddVote(vote dt.Vote) error {
+	f := func(db *sql.DB) error {
 		_, err := db.Exec(fmt.Sprintf("insert into vote(song,user,like,r,g,b) values('%s')",vote.Song.Id,vote.User.Id,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
-		return err != nil
+		return err
 	}
-	doTransaction(f)
+	return doTransaction(f)
 }
 func GetSongByName(name string){
 
@@ -43,18 +42,23 @@ func GetSongByMoodAndRoom(mood dt.Mood, room dt.Room){
 
 } 
 
-func GetSongs() []dt.Song{
+func GetSongs() ([]dt.Song, error) {
 	songs := []dt.Song{}
-	f := func(db *sql.DB) bool {
+	f := func(db *sql.DB) error {
 		rows, err := db.Query("select id, title from song")
+		if err != nil {
+			return err
+		}
 		defer rows.Close()
 		songs = convSongs(rows)
-		return err != nil
+		return nil
 	}
-	doTransaction(f)
-	return songs
+	if err := doTransaction(f); err != nil {
+		return nil, err
+	}
+	return songs, nil
 }
-func convSongs(rows *sql.Rows) []dt.Song{
+func convSongs(rows *sql.Rows) []dt.Song {
 	songs := []dt.Song{}
 	for rows.Next() {
 		song := dt.Song{}
@@ -64,39 +68,42 @@ func convSongs(rows *sql.Rows) []dt.Song{
 	return songs
 }
 
-func GetSongsByChaos(num int) []dt.Song{
+func GetSongsByChaos(num int) ([]dt.Song, error) {
 	songs := []dt.Song{}
-	f := func(db *sql.DB) bool {
-		rows, err := db.Query(fmt.Sprintf("select * from song order by RANDOM() limit %d",num))
+	f := func(db *sql.DB) error {
+		rows, err := db.Query(fmt.Sprintf("select * from song order by RANDOM() limit %d", num))
+		if err != nil {
+			return err
+		}
 		defer rows.Close()
 		songs = convSongs(rows)
-		return err != nil
+		return nil
 	}
-	doTransaction(f)
-	return songs
+	if err := doTransaction(f); err != nil {
+		return nil, err
+	}
+	return song, nil
 }
 
-// Returns true on error (transaction should be rolled back)
-type DBCallback func(*sql.DB) bool
-
-func doTransaction(call DBCallback) {
+type DBCallback func(*sql.DB) error
+func doTransaction(call DBCallback) error {
 	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	defer db.Close()
 	tx, err := db.Begin();
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	
-	if call(db) {
+	if err := call(db); err != nil {
 		tx.Rollback()
-		log.Fatal(err)
+		return err
 	} else {
 		tx.Commit()
+		return nil
 	}
-
-	db.Close()
 }
 
 
