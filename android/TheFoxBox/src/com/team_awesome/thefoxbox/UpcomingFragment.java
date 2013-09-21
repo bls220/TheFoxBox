@@ -14,7 +14,7 @@ import android.widget.ListView;
  * @author bsmith
  * 
  */
-public class UpcomingFragment extends Fragment {
+public class UpcomingFragment extends Fragment implements QueryCallbacks{
 
 	private ListView mQueueList;
 	private ListView mSuggestionList;
@@ -46,6 +46,28 @@ public class UpcomingFragment extends Fragment {
 		mSuggestionList.setAdapter(new SongAdapter(getActivity()));
 
 		return rootView;
+	}
+
+	@Override
+	public void loginCallback(String authToken) {
+		// Do NOthing
+	}
+
+	@Override
+	public void queueCallback(SongItem[] data) {
+		// TODO Update queue list
+		
+	}
+
+	@Override
+	public void searchCallback(SongItem[] results) {
+		// Do Nothing
+	}
+
+	@Override
+	public void submitCallback(String error) {
+		// TODO Check for errors
+		
 	}
 
 }

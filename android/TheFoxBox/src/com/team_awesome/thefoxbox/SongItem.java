@@ -5,6 +5,7 @@ public class SongItem {
 	private String mAlbum;
 	private String mTitle;
 	private String mArtist;
+	private int mID;
 	private EVote mVote;
 
 	public static enum EVote {
@@ -25,7 +26,7 @@ public class SongItem {
 	};
 
 	public SongItem() {
-		this("No Album","No Title","No Artist",EVote.NONE);
+		this("No Album","No Title","No Artist",-1,EVote.NONE);
 	}
 
 	/**
@@ -33,11 +34,12 @@ public class SongItem {
 	 * @param mTitle
 	 * @param mArtist
 	 */
-	public SongItem(String mAlbum, String mTitle, String mArtist, EVote mVote) {
+	public SongItem(String mAlbum, String mTitle, String mArtist,int mID, EVote mVote) {
 		super();
 		this.mAlbum = mAlbum;
 		this.mTitle = mTitle;
 		this.mArtist = mArtist;
+		this.setID(mID);
 		this.mVote = mVote;
 	}
 	
@@ -81,6 +83,20 @@ public class SongItem {
 	 */
 	public void setArtist(String mArtist) {
 		this.mArtist = mArtist;
+	}
+
+	/**
+	 * @return the mID
+	 */
+	public int getID() {
+		return mID;
+	}
+
+	/**
+	 * @param mID the mID to set
+	 */
+	public void setID(int mID) {
+		this.mID = mID;
 	}
 
 	/**

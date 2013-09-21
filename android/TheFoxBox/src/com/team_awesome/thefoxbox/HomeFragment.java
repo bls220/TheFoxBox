@@ -14,53 +14,54 @@ import android.view.ViewGroup;
 
 /**
  * @author bsmith
- *
+ * 
  */
 public class HomeFragment extends Fragment implements QueryCallbacks {
+	
+	private static String mAuthCode = "";
 
 	/**
 	 * 
 	 */
-	public HomeFragment() {	}
-	
-	 @Override
-     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-             Bundle savedInstanceState) {
-		 View rootView = inflater.inflate(R.layout.fragment_nowplaying, container, false);
-		 
-		 Log.w(MainActivity.TAG,"Testing shiz");
-		 CommThread thread = new CommThread();
-		 try {
+	public HomeFragment() {
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+		View rootView = inflater.inflate(R.layout.fragment_nowplaying,
+				container, false);
+
+		Log.w(MainActivity.TAG, "Testing shiz");
+		CommThread thread = new CommThread();
+		try {
 			thread.login(this, "Ben");
 			thread.start();
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		 
-         return rootView;
-	 }
+
+		return rootView;
+	}
 
 	@Override
 	public void loginCallback(String authToken) {
-		Log.d(MainActivity.TAG,"AuthToken: " + authToken);		
+		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
+		mAuthCode = authToken;
 	}
 
 	@Override
-	public void queueCallback(FoxData data) {
-		// TODO Auto-generated method stub
-		
+	public void queueCallback(SongItem[] data) {
+		// TODO Update now playing
 	}
 
 	@Override
-	public void searchCallback(String[] results) {
-		// TODO Auto-generated method stub
-		
+	public void searchCallback(SongItem[] results) {
+		// DO Nothing here
 	}
 
 	@Override
 	public void submitCallback(String error) {
-		// TODO Auto-generated method stub
-		
+		// Do Nothing here
 	}
-
 }
