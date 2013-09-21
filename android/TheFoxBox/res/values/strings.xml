@@ -10,5 +10,6 @@
     <string name="action_search_title">Find Song</string>
     <string name="search_hint">Song Title</string>
     <string name="app_label">com.team_awesome.thefoxbox.MainActivity</string>
+    <string name="divider_now_playing">Now Playing</string>
 
 </resources>

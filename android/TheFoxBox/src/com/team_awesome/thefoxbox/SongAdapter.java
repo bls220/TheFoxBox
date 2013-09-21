@@ -68,6 +68,11 @@ public class SongAdapter extends ArrayAdapter<SongItem>{
         return row;
     }
     
+    public void clear(){
+    	data.clear();
+    	notifyDataSetChanged();
+    }
+    
     static class SongHolder
     {
         ImageView imgArt;
