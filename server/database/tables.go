@@ -18,7 +18,7 @@ func CreateUserTable(){
 		`create table user (
 			id 		integer not null primary key, 
 			name	text, 
-			admin	integer
+			admin	integer 
 			);
 		delete from user;`)
 }
@@ -27,7 +27,10 @@ func CreateSongTable(){
 	createTable(
 		`create table song (
 			id 		integer not null primary key, 
-			title 	text
+			title 	text,
+			album	text,
+			artist	text,
+			genre 	text
 			);
 		delete from song;`)
 }

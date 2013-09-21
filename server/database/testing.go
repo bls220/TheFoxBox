@@ -15,5 +15,5 @@ func Test() {
 				dt.Song{Title: "What the dog says"},
 				dt.Song{Title: "What the cat says"}})
 	//GetSongs()
-	fmt.Println(GetSongsByChaos(3))
+	fmt.Println(GetSongsByString("fox"))
 }
