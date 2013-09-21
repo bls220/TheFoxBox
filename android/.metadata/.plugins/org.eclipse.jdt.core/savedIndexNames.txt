@@ -1,4 +1,0 @@
-INDEX VERSION 1.126+/home/bsmith/repo/TheFoxBox/android/.metadata/.plugins/org.eclipse.jdt.core
-2293251443.index
-238903077.index
-196062795.index
