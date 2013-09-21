@@ -11,14 +11,17 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 /**
  * @author bsmith
  * 
  */
 public class HomeFragment extends Fragment implements QueryCallbacks {
-	
+
 	private static String mAuthCode = "";
+
+	private SongAdapter adapterNowPlaying;
 
 	/**
 	 * 
@@ -31,6 +34,11 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 			Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_nowplaying,
 				container, false);
+
+		adapterNowPlaying = new SongAdapter(getActivity(),
+				new SongItem[] { new SongItem() });
+		((ListView) rootView.findViewById(R.id.listViewNowPlaying))
+				.setAdapter(adapterNowPlaying);
 
 		Log.w(MainActivity.TAG, "Testing shiz");
 		CommThread thread = new CommThread();
@@ -52,7 +60,10 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 
 	@Override
 	public void queueCallback(SongItem[] data) {
-		// TODO Update now playing
+		// Update now playing
+		adapterNowPlaying.clear();
+		if (data.length > 0)
+			adapterNowPlaying.add(data[0]);
 	}
 
 	@Override
