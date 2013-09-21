@@ -35,7 +35,7 @@ JSON descriptions:
 		-Params:
 			-Term: String to search for (searches through albums, artist, and title)
 	
-	When submitting a song:
+	When submitting a song to be played:
 		-Request: "submit"
 		-AuthToken: The token retrieved from logging in
 		-Params:
