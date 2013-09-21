@@ -32,6 +32,7 @@ func runServer(addr string, h ConnHandler) {
 			klog.Warning(SockServ, "accepting connection: ", err)
 			continue
 		}
+		klog.Info(SockServ, "Got conn")
 		go handleConn(conn, h)
 	}
 }

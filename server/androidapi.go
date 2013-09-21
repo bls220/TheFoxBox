@@ -37,6 +37,9 @@ func (m*AndroidRequest) Respond(d interface{}) error {
 		           byte((llen >> 16) & 0xFF),
 		           byte((llen >> 24) & 0xFF)
 		m.conn.Write([]byte{a,b,c,d})
+		
+		klog.Info(AAM, "Sending response:", string(str))
+		
 		m.conn.Write((str))
 		return nil
 	}
@@ -82,19 +85,20 @@ func GotConn(conn net.Conn) error {
 	        ((lens[1]&0xFF) <<  8) |
 	        ((lens[2]&0xFF) << 16) |
 	        ((lens[3]&0xFF) << 24)
+	fmt.Println("LLen=", llen)
 	
 	buf := make([]byte, llen)
 	if _, err := io.ReadFull(conn, buf); err != nil {
 		return errors.New("Unable to fully read the payload from the client")
 	}
 	
-	req := &AndroidRequest{}
+	req := &AndroidRequest{Params:make(map[string]string),}
 	if err := json.Unmarshal(buf, req); err != nil {
 		return err
 	}
 	req.conn = conn
 	
-	klog.Info(AAM, "Got request:", req.Request)
+	klog.Info(AAM, "Got request:", req)
 	switch req.Request {
 		case "vote":
 			return procVote(req)
@@ -117,7 +121,7 @@ func GotConn(conn net.Conn) error {
    This map is shared among multiple goroutines and therefore must be guarded by a mutex.
 	It maps an AuthToken to the corresponding User
 */
-var loggedInUsers map[string]*dt.User
+var loggedInUsers map[string]*dt.User = make(map[string]*dt.User)
 var loggedInUsersMutex sync.Mutex
 // Also guarded by loggedInUsersMutex
 var nextAuthToke uint64
