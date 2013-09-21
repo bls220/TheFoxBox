@@ -14,14 +14,22 @@ JSON descriptions:
 			-Album: string
 			-Artist: string
 			-Title: string
-			-Votes: int
 			-Id: An id for the song. This id is important because it is what you have to send to the server when requesting/voting on a song
 
+	When requesting the queue:
+		-Request: "songlist"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			(None)
+			
 	When logging in:
 		-Request: "login"
 		-Params:
 			-Name: Name of the user
 			// TODO: probably need to add some more fields here
+		
+		Returns:
+			A JSON object with "AuthToken" equal to the AuthToken you should use for the other methods
 	
 	When submitting moods:
 		-Request: "moodchange"
@@ -35,8 +43,12 @@ JSON descriptions:
 		-Params:
 			-Term: String to search for (searches through albums, artist, and title)
 	
-	When submitting a song:
+
+	When submitting a song to be played:
 		-Request: "submit"
 		-AuthToken: The token retrieved from logging in
 		-Params:
 			-Id: Song id to submit to the queue
+		Returns:
+			A JSON object with "Ret" equal to "" (a zero-length string) for success and a descriptive reason why
+				they could not add the song if the song could not be queued (recently played, etc)
