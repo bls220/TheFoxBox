@@ -91,13 +91,13 @@ func GotConn(conn net.Conn) error {
 		case "vote":
 			//return procVote(req)
 		case "submit":
-			//return procSubmit(req)
+			return procSubmit(req)
 		case "moodchange":
 			return procMoodChange(req)
 		case "songlist":
 			return procSongList(req)
 		case "search":
-			//return procSearch(req)
+			return procSearch(req)
 		case "login":
 			return logInUser(req)
 	}
@@ -175,8 +175,13 @@ func procMoodChange(req*AndroidRequest) error {
 	return nil
 }
 
+func procSearch(req*AndroidRequest) error {
+	if req.require("Term") { return KeysNotFound }
+	u := req.getUser()
+	if u == nil { return TokenNotFound }
 
+	//TODO: DB: search for this
 
-
-
+	return procSongList(req)
+}
 
