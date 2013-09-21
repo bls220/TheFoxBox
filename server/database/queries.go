@@ -12,21 +12,25 @@ func GetUser(name string) {
 	
 }
 func AddUser(user dt.User){
-
+	
 }
 
-func AddSong(song dt.Song){
+func AddSongs(songs []dt.Song){
 	f := func(db *sql.DB) bool {
-		_, err := db.Exec(fmt.Sprintf("insert into song(title) values('%s')",song.Title));
-		return err != nil 
+		for _, x := range songs {
+			if _, err := db.Exec(fmt.Sprintf("insert into song(title) values('%s')",x.Title)); err != nil {
+				return true
+			}
+		}
+		return true
 	}
 	doTransaction(f)
 }
 
-func AddVote(user dt.User, mood dt.Mood, song dt.Song){
+func AddVote(vote dt.Vote){
 
 	f := func(db *sql.DB) bool {
-		_, err := db.Exec(fmt.Sprintf("insert into mood(song) values('%s')",song.Title));
+		_, err := db.Exec(fmt.Sprintf("insert into vote(song,user,like,r,g,b) values('%s')",vote.Song.Id,vote.User.Id,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
 		return err != nil
 	}
 	doTransaction(f)

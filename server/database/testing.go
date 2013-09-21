@@ -10,10 +10,10 @@ func Test() {
 	CreateUserTable()
 	CreateSongTable()
 	CreateVoteTable()
-	AddSong(dt.Song{Title: "What the frog says"})
-	AddSong(dt.Song{Title: "What the fox says"})
-	AddSong(dt.Song{Title: "What the dog says"})
-	AddSong(dt.Song{Title: "What the cat says"})
+	AddSongs(dt.Song{Title: "What the frog says"}, 
+				dt.Song{Title: "What the fox says"},
+				dt.Song{Title: "What the dog says"},
+				dt.Song{Title: "What the cat says"})
 	//GetSongs()
 	fmt.Println(GetSongsByChaos(3))
 }
