@@ -9,14 +9,6 @@ import (
 
 const DB_PATH string = "./thedb.db";
 
-func GetOpenDB() *sql.DB {
-	db, err := sql.Open("sqlite3", DB_PATH)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return db
-}
-
 func DestroyDB(){
 	os.Remove(DB_PATH)
 }
@@ -40,14 +32,16 @@ func CreateSongTable(){
 		delete from song;`)
 }
 
-func CreateUserSongTable(){
+func CreateMoodTable(){
 	createTable(
-		`create table user_song (
+		`create table mood (
 			id		integer not null primary key, 
 			song 	references song(id),
 			user 	references user(id),
 			like	integer,
-			colour	text
+			r 		integer,
+			g 		integer,
+			b  		integer
 			);
 		delete from song;`)
 }
