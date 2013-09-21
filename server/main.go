@@ -8,7 +8,6 @@ func main() {
 	fmt.Println("Started")
 
 	s := gop3.InitMp3()
-	s <- "capella.mp3"
-	close(s)
+	s.PlaySong("capella.mp3")
 	select{}
 }
