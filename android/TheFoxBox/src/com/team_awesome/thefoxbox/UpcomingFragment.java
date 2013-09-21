@@ -55,8 +55,16 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks{
 
 	@Override
 	public void queueCallback(SongItem[] data) {
-		// TODO Update queue list
-		
+		// Update queue list
+		SongAdapter adapter = (SongAdapter) mQueueList.getAdapter();
+		adapter.clear();
+		for( SongItem song : data) {
+			adapter.add(song);
+		}
+		if( adapter.getCount() > 0 ){
+			//Remove now playing
+			adapter.remove(adapter.getItem(0));
+		}
 	}
 
 	@Override

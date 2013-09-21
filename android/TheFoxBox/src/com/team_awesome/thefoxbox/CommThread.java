@@ -24,7 +24,7 @@ import android.util.Log;
  * 
  */
 public class CommThread extends Thread {
-	private static final String IPADDR = "192.168.1.108";
+	private static final String IPADDR = "67.194.107.169 ";
 	private static final int PORT = 5853;
 
 	private Socket mSocket;
@@ -39,28 +39,37 @@ public class CommThread extends Thread {
 	 * 
 	 */
 	public static enum EMSG_TYPE {
-		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE("moodchange");
+		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE(
+				"moodchange"), SONGLIST("songlist");
 		private String val;
-		EMSG_TYPE(String value){
+
+		EMSG_TYPE(String value) {
 			val = value;
 		}
-		public String toString(){
+
+		public String toString() {
 			return val;
 		}
 	};
 
 	public void login(QueryCallbacks callback, String username)
 			throws JSONException {
-		Map<String,String> map = new HashMap<String,String>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("Name", username.trim().toLowerCase());
 		mJSONOut = JSONPacker.pack("", EMSG_TYPE.LOGIN, map);
 		mCallback = callback;
 	}
-	
+
 	public void search(QueryCallbacks callback, String query) {
-		Map<String,String> map = new HashMap<String,String>();
+		Map<String, String> map = new HashMap<String, String>();
 		map.put("Term", query.trim().toLowerCase());
 		mJSONOut = JSONPacker.pack("", EMSG_TYPE.SEARCH, map);
+		mCallback = callback;
+	}
+
+	public void getQueue(QueryCallbacks callback) {
+		Map<String, String> map = new HashMap<String, String>();
+		mJSONOut = JSONPacker.pack("", EMSG_TYPE.SONGLIST, map);
 		mCallback = callback;
 	}
 
@@ -93,8 +102,8 @@ public class CommThread extends Thread {
 			byte[] buf = new byte[len];
 			int cur = 0;
 			do {
-				cur += in.read(buf, cur, len-cur);
-			}while(cur < len);
+				cur += in.read(buf, cur, len - cur);
+			} while (cur < len);
 
 			mJSONOut = new JSONObject(new String(buf));
 			// Handle response
@@ -111,51 +120,60 @@ public class CommThread extends Thread {
 		return ret;
 	}
 
+	private SongItem[] getSongList(JSONObject in) throws JSONException {
+		JSONArray array = in.getJSONArray("Songs");
+		ArrayList<SongItem> list = new ArrayList<SongItem>();
+		for (int i = 0; i < list.size(); i++) {
+			JSONObject obj = (JSONObject) array.get(i);
+			Log.d(MainActivity.TAG, obj.toString());
+
+			SongItem newSong = new SongItem();
+			newSong.setAlbum(obj.getString("Album"));
+			newSong.setArtist(obj.getString("Artist"));
+			newSong.setTitle(obj.getString("Title"));
+			newSong.setID(obj.getInt("Id"));
+			list.add(newSong);
+		}
+		return (SongItem[]) list.toArray();
+	}
+
 	private void handleResponse() {
 		try {
 			String type = mJSONOut.getString(JSONPacker.REQUEST_FIELD);
 			if (type.equals(EMSG_TYPE.LOGIN)) {
-				mCallback.loginCallback(mJSONOut.getString(JSONPacker.AUTHCODE_FIELD));
+				mCallback.loginCallback(mJSONOut
+						.getString(JSONPacker.AUTHCODE_FIELD));
 			} else if (type.equals(EMSG_TYPE.SUBMIT)) {
-				mCallback.submitCallback(mJSONOut.getString(JSONPacker.REQUEST_FIELD));
-			} else if (type.equals(EMSG_TYPE.SEARCH)){
-				JSONArray array = mJSONOut.getJSONArray("Songs");
-				ArrayList<SongItem> list = new ArrayList<SongItem>();
-				for( int i=0; i<list.size(); i++){
-					JSONObject obj = (JSONObject) array.get(i);
-					Log.d(MainActivity.TAG, obj.toString());
-					
-					SongItem newSong = new SongItem();
-					newSong.setAlbum(obj.getString("Album"));
-					newSong.setArtist(obj.getString("Artist"));
-					newSong.setTitle(obj.getString("Title"));
-					newSong.setID(obj.getInt("Id"));
-					list.add(newSong);
-				}
-				mCallback.searchCallback((SongItem[]) list.toArray());
+				mCallback.submitCallback(mJSONOut
+						.getString(JSONPacker.REQUEST_FIELD));
+			} else if (type.equals(EMSG_TYPE.SEARCH)) {
+				mCallback.searchCallback(getSongList(mJSONOut));
+			} else if (type.equals(EMSG_TYPE.SONGLIST)) {
+				mCallback.queueCallback(getSongList(mJSONOut));
 			}
 			// TODO: others
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 	}
-	
-	private static final class JSONPacker{
+
+	private static final class JSONPacker {
 		public static final String REQUEST_FIELD = "Request";
 		public static final String AUTHCODE_FIELD = "AuthCode";
 		public static final String PARAMS_FIELD = "Params";
-		
-		public static final JSONObject pack(String authCode, EMSG_TYPE type, Map<String,String> params){
+
+		public static final JSONObject pack(String authCode, EMSG_TYPE type,
+				Map<String, String> params) {
 			JSONObject ret = new JSONObject();
 			try {
 				ret.put(AUTHCODE_FIELD, authCode);
 				ret.put(REQUEST_FIELD, type);
 				JSONObject JSONParams = new JSONObject();
-				for( Entry<String,String> entry : params.entrySet()){
+				for (Entry<String, String> entry : params.entrySet()) {
 					JSONParams.put(entry.getKey(), entry.getValue());
 				}
 				ret.put(PARAMS_FIELD, JSONParams);
-				
+
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
