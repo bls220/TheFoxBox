@@ -1,9 +1,6 @@
 package database
 
 import (
-	"fmt"
-	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"../dt"
 )
 
@@ -11,9 +8,12 @@ func Test() {
 	DestroyDB()
 	CreateUserTable()
 	CreateSongTable()
-	CreateUserSongTable()
-	db := GetDB()
-	
+	CreateMoodTable()
+	AddSong(dt.Song{Title: "What the frog says"})
+	GetSongs();
+
+
+	/*
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
@@ -53,4 +53,5 @@ func Test() {
 		rows.Scan(&id, &name)
 		fmt.Println(id, name)
 	}
+	*/
 }
