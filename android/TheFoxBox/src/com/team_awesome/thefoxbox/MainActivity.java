@@ -23,8 +23,8 @@ import android.view.ViewGroup;
 import android.widget.SearchView;
 import android.widget.TextView;
 
-public class MainActivity extends FragmentActivity {
-	
+public class MainActivity extends FragmentActivity implements QueryCallbacks {
+
 	static final String TAG = "TheFoxBox";
 
 	/**
@@ -41,16 +41,18 @@ public class MainActivity extends FragmentActivity {
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
-	
+
 	@Override
-	protected void onNewIntent(Intent intent){
+	protected void onNewIntent(Intent intent) {
 		setIntent(intent);
-	    // Get the intent, verify the action and get the query
-	    if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-		String query = intent.getStringExtra(SearchManager.QUERY);
-	      //TODO: doMySearch(query);
-	    }
-		
+		// Get the intent, verify the action and get the query
+		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+			String query = intent.getStringExtra(SearchManager.QUERY);
+			CommThread comms = new CommThread();
+			comms.search(this,query);
+			comms.start();
+		}
+
 	}
 
 	@Override
@@ -66,8 +68,8 @@ public class MainActivity extends FragmentActivity {
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
-		
-		//Set up action bar
+
+		// Set up action bar
 		ActionBar bar = getActionBar();
 
 	}
@@ -76,13 +78,15 @@ public class MainActivity extends FragmentActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		
-	    // Get the SearchView and set the searchable configuration
-	    SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-	    SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
-	    // Assumes current activity is the searchable activity
-	    searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-	    
+
+		// Get the SearchView and set the searchable configuration
+		SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+		SearchView searchView = (SearchView) menu.findItem(R.id.action_search)
+				.getActionView();
+		// Assumes current activity is the searchable activity
+		searchView.setSearchableInfo(searchManager
+				.getSearchableInfo(getComponentName()));
+
 		return true;
 	}
 
@@ -101,15 +105,16 @@ public class MainActivity extends FragmentActivity {
 			// getItem is called to instantiate the fragment for the given page.
 			Fragment fragment = null;
 			switch (position) {
-			case 0: //Now Playing
+			case 0: // Now Playing
 				fragment = new HomeFragment();
 				break;
-			case 1: //Upcoming
+			case 1: // Upcoming
 				fragment = new UpcomingFragment();
 				break;
 			default:
-				Log.e(TAG,"Fragment created out of bounds.");
-				throw new IndexOutOfBoundsException("Page Viewer doesn't hold " + (position+1) + " fragments.");
+				Log.e(TAG, "Fragment created out of bounds.");
+				throw new IndexOutOfBoundsException("Page Viewer doesn't hold "
+						+ (position + 1) + " fragments.");
 			}
 			return fragment;
 		}
@@ -131,5 +136,25 @@ public class MainActivity extends FragmentActivity {
 			}
 			return null;
 		}
+	}
+
+	@Override
+	public void loginCallback(String authToken) {
+		// DO Nothing
+	}
+
+	@Override
+	public void queueCallback(SongItem[] data) {
+		// DO Nothing
+	}
+
+	@Override
+	public void searchCallback(SongItem[] results) {
+		//TODO: look at results
+	}
+
+	@Override
+	public void submitCallback(String error) {
+		// Do Nothing
 	}
 }

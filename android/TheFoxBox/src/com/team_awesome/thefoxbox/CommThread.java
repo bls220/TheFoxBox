@@ -5,16 +5,15 @@ package com.team_awesome.thefoxbox;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,8 +24,8 @@ import android.util.Log;
  * 
  */
 public class CommThread extends Thread {
-
-	private static final String REQUEST_FIELD = "Request";
+	private static final String IPADDR = "192.168.1.108";
+	private static final int PORT = 5853;
 
 	private Socket mSocket;
 
@@ -40,16 +39,28 @@ public class CommThread extends Thread {
 	 * 
 	 */
 	public static enum EMSG_TYPE {
-		SEARCH, VOTE, LOGIN, SUBMIT, MOODCHANGE
+		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE("moodchange");
+		private String val;
+		EMSG_TYPE(String value){
+			val = value;
+		}
+		public String toString(){
+			return val;
+		}
 	};
 
 	public void login(QueryCallbacks callback, String username)
 			throws JSONException {
-		JSONObject params = new JSONObject();
-		mJSONOut = new JSONObject();
-		mJSONOut.put(REQUEST_FIELD, "login");
-		params.put("Name", username.toLowerCase().trim());
-		mJSONOut.put("Params", params);
+		Map<String,String> map = new HashMap<String,String>();
+		map.put("Name", username.trim().toLowerCase());
+		mJSONOut = JSONPacker.pack("", EMSG_TYPE.LOGIN, map);
+		mCallback = callback;
+	}
+	
+	public void search(QueryCallbacks callback, String query) {
+		Map<String,String> map = new HashMap<String,String>();
+		map.put("Term", query.trim().toLowerCase());
+		mJSONOut = JSONPacker.pack("", EMSG_TYPE.SEARCH, map);
 		mCallback = callback;
 	}
 
@@ -96,21 +107,59 @@ public class CommThread extends Thread {
 	}
 
 	private Socket getSocket() throws IOException {
-		Socket ret = new Socket(InetAddress.getByName("67.194.68.48"), 5853);
+		Socket ret = new Socket(InetAddress.getByName(IPADDR), PORT);
 		return ret;
 	}
 
 	private void handleResponse() {
 		try {
-			String type = mJSONOut.getString(REQUEST_FIELD);
-			if (type.equals(EMSG_TYPE.LOGIN.toString().toLowerCase())) {
-				mCallback.loginCallback(mJSONOut.getString("AuthToken"));
-			} else if (type.equals(EMSG_TYPE.SUBMIT.toString().toLowerCase())) {
-				mCallback.submitCallback(mJSONOut.getString(REQUEST_FIELD));
+			String type = mJSONOut.getString(JSONPacker.REQUEST_FIELD);
+			if (type.equals(EMSG_TYPE.LOGIN)) {
+				mCallback.loginCallback(mJSONOut.getString(JSONPacker.AUTHCODE_FIELD));
+			} else if (type.equals(EMSG_TYPE.SUBMIT)) {
+				mCallback.submitCallback(mJSONOut.getString(JSONPacker.REQUEST_FIELD));
+			} else if (type.equals(EMSG_TYPE.SEARCH)){
+				JSONArray array = mJSONOut.getJSONArray("Songs");
+				ArrayList<SongItem> list = new ArrayList<SongItem>();
+				for( int i=0; i<list.size(); i++){
+					JSONObject obj = (JSONObject) array.get(i);
+					Log.d(MainActivity.TAG, obj.toString());
+					
+					SongItem newSong = new SongItem();
+					newSong.setAlbum(obj.getString("Album"));
+					newSong.setArtist(obj.getString("Artist"));
+					newSong.setTitle(obj.getString("Title"));
+					newSong.setID(obj.getInt("Id"));
+					list.add(newSong);
+				}
+				mCallback.searchCallback((SongItem[]) list.toArray());
 			}
 			// TODO: others
 		} catch (JSONException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static final class JSONPacker{
+		public static final String REQUEST_FIELD = "Request";
+		public static final String AUTHCODE_FIELD = "AuthCode";
+		public static final String PARAMS_FIELD = "Params";
+		
+		public static final JSONObject pack(String authCode, EMSG_TYPE type, Map<String,String> params){
+			JSONObject ret = new JSONObject();
+			try {
+				ret.put(AUTHCODE_FIELD, authCode);
+				ret.put(REQUEST_FIELD, type);
+				JSONObject JSONParams = new JSONObject();
+				for( Entry<String,String> entry : params.entrySet()){
+					JSONParams.put(entry.getKey(), entry.getValue());
+				}
+				ret.put(PARAMS_FIELD, JSONParams);
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			return ret;
 		}
 	}
 
