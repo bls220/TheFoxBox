@@ -4,25 +4,15 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"../dt"
 )
 
-/*
-	create table user (id integer not null primary key, name text, admin integer);
-	create table userSong (id integer not null primarykey,
-							foreign key(song) references song(id)
-							);
-
-create table song (id integer not null primary key, name text);
-	create table user (id integer not null primary key, name text, admin integer);
-	delete from song;
-	delete from user;
-*/
 func Test() {
 	DestroyDB()
 	CreateUserTable()
 	CreateSongTable()
 	CreateUserSongTable()
-	db := GetOpenDB()
+	db := GetDB()
 	
 	tx, err := db.Begin()
 	if err != nil {
@@ -52,7 +42,7 @@ func Test() {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query("select id, name from user")
+	rows, err := db.Query("select id, name from song")
 	if err != nil {
 		log.Fatal(err)
 	}
