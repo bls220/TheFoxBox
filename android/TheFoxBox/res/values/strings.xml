@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <string name="app_name">TheFoxBox</string>
@@ -8,5 +7,8 @@
     <string name="title_section_search">Search</string>
     <string name="divider_queue">Up Next</string>
     <string name="divider_suggestions">Suggestions</string>
+    <string name="action_search_title">Find Song</string>
+    <string name="search_hint">Song Title</string>
+    <string name="app_label">com.team_awesome.thefoxbox.MainActivity</string>
 
 </resources>
