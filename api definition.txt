@@ -10,7 +10,8 @@ Also the Go program is going to run on port 5853
 		
 JSON descriptions:
 	A song list:
-		A list of JSON objects with the following fields:
+		-Request: "songlist"; "search"; whatever request caused the songlist to be returned
+		-Songs: (A list of the following objects)
 			-Album: string
 			-Artist: string
 			-Title: string
@@ -43,8 +44,22 @@ JSON descriptions:
 		-Params:
 			-Term: String to search for (searches through albums, artist, and title)
 	
+<<<<<<< HEAD
 
 	When submitting a song to be played:
+=======
+		Returns:
+			A song list
+	
+	When voting on a song:
+		-Request: "vote"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			-Id: Song id to submit to the queue
+			-Amt: The amount to vote. Should be -1 or 1.
+	
+	When submitting a song:
+>>>>>>> API update, DJ bugfixes
 		-Request: "submit"
 		-AuthToken: The token retrieved from logging in
 		-Params:
