@@ -18,12 +18,12 @@ func AddUser(user dt.User){
 func AddSong(song dt.Song){
 	f := func(db *sql.DB) bool {
 		_, err := db.Exec(fmt.Sprintf("insert into song(title) values('%s')",song.Title));
-		return err != nil
+		return err != nil 
 	}
 	doTransaction(f)
 }
 
-func AddVote(user dt.User, mood dt.Mood, Song dt.Song){
+func AddVote(user dt.User, mood dt.Mood, song dt.Song){
 
 	f := func(db *sql.DB) bool {
 		_, err := db.Exec(fmt.Sprintf("insert into mood(song) values('%s')",song.Title));
@@ -39,20 +39,26 @@ func GetSongByMoodAndRoom(mood dt.Mood, room dt.Room){
 
 } 
 
-func GetSongs(){
-
+func GetSongs() []dt.Song{
+	songs := []dt.Song{}
 	f := func(db *sql.DB) bool {
 		rows, err := db.Query("select id, title from song")
 		defer rows.Close()
-		for rows.Next() {
-			var id int
-			var title string
-			rows.Scan(&id, &title)
-			fmt.Println(id, title)
-		}
+		songs = convSongs(rows)
 		return err != nil
 	}
 	doTransaction(f)
+	return songs
+}
+func convSongs(rows *sql.Rows) []dt.Song{
+	songs := []dt.Song{}
+	for rows.Next() {
+		song := dt.Song{}
+		rows.Scan(&song.Id,&song.Title)
+		fmt.Println(song)
+		songs = append(songs,song)
+	}
+	return songs
 }
 
 func GetSongByChaos(num int){
@@ -71,14 +77,6 @@ func GetSongByChaos(num int){
 
 	doTransaction(f)
 }
-
-
-/*func dbExec(db, qry string){
-	_, err := db.Exec(qry)
-	if err != nil {
-		log.Fatal(err)
-	}
-}*/
 
 // Returns true on error (transaction should be rolled back)
 type DBCallback func(*sql.DB) bool
