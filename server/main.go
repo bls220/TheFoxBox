@@ -1,13 +1,18 @@
 
 package main
 
-import "./gop3"
+//import "./gop3"
 import "fmt"
 
-func main() {
+/*func main() {
 	fmt.Println("Started")
 
 	s := gop3.InitMp3()
 	s.PlaySong("capella.mp3")
 	select{}
+}*/
+
+func main() {
+	fmt.Println("Started")
+	//Scan("F:/jukebox")
 }
