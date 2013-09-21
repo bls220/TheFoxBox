@@ -4,4 +4,5 @@ public interface QueryCallbacks {
 	public void loginCallback(String authToken);
 	public void queueCallback(FoxData data);
 	public void searchCallback(String[] results);
+	public void submitCallback(String error);
 }
