@@ -27,6 +27,8 @@ public class CommThread extends Thread {
 	private static final String IPADDR = "67.194.107.169 ";
 	private static final int PORT = 5853;
 
+	public static String mAuthCode;
+
 	private Socket mSocket;
 
 	private JSONObject mJSONOut;
@@ -63,13 +65,13 @@ public class CommThread extends Thread {
 	public void search(QueryCallbacks callback, String query) {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("Term", query.trim().toLowerCase());
-		mJSONOut = JSONPacker.pack("", EMSG_TYPE.SEARCH, map);
+		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.SEARCH, map);
 		mCallback = callback;
 	}
 
 	public void getQueue(QueryCallbacks callback) {
 		Map<String, String> map = new HashMap<String, String>();
-		mJSONOut = JSONPacker.pack("", EMSG_TYPE.SONGLIST, map);
+		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.SONGLIST, map);
 		mCallback = callback;
 	}
 
@@ -99,6 +101,9 @@ public class CommThread extends Thread {
 					mSocket.getInputStream());
 			len = in.read() | (in.read() << 8) | (in.read() << 16)
 					| (in.read() << 24);
+			if (len < 0) {
+				throw new IOException("Invalid message length.");
+			}
 			byte[] buf = new byte[len];
 			int cur = 0;
 			do {
@@ -122,8 +127,8 @@ public class CommThread extends Thread {
 
 	private SongItem[] getSongList(JSONObject in) throws JSONException {
 		JSONArray array = in.getJSONArray("Songs");
-		ArrayList<SongItem> list = new ArrayList<SongItem>();
-		for (int i = 0; i < list.size(); i++) {
+		SongItem[] list = new SongItem[array.length()];
+		for (int i = 0; i < list.length; i++) {
 			JSONObject obj = (JSONObject) array.get(i);
 			Log.d(MainActivity.TAG, obj.toString());
 
@@ -132,23 +137,23 @@ public class CommThread extends Thread {
 			newSong.setArtist(obj.getString("Artist"));
 			newSong.setTitle(obj.getString("Title"));
 			newSong.setID(obj.getInt("Id"));
-			list.add(newSong);
+			list[i] = newSong;
 		}
-		return (SongItem[]) list.toArray();
+		return list;
 	}
 
 	private void handleResponse() {
 		try {
 			String type = mJSONOut.getString(JSONPacker.REQUEST_FIELD);
-			if (type.equals(EMSG_TYPE.LOGIN)) {
-				mCallback.loginCallback(mJSONOut
-						.getString(JSONPacker.AUTHCODE_FIELD));
-			} else if (type.equals(EMSG_TYPE.SUBMIT)) {
+			if (type.equals(EMSG_TYPE.LOGIN.toString())) {
+				mAuthCode = mJSONOut.getString(JSONPacker.AUTHCODE_FIELD);
+				mCallback.loginCallback(mAuthCode);
+			} else if (type.equals(EMSG_TYPE.SUBMIT.toString())) {
 				mCallback.submitCallback(mJSONOut
 						.getString(JSONPacker.REQUEST_FIELD));
-			} else if (type.equals(EMSG_TYPE.SEARCH)) {
+			} else if (type.equals(EMSG_TYPE.SEARCH.toString())) {
 				mCallback.searchCallback(getSongList(mJSONOut));
-			} else if (type.equals(EMSG_TYPE.SONGLIST)) {
+			} else if (type.equals(EMSG_TYPE.SONGLIST.toString())) {
 				mCallback.queueCallback(getSongList(mJSONOut));
 			}
 			// TODO: others
@@ -159,7 +164,7 @@ public class CommThread extends Thread {
 
 	private static final class JSONPacker {
 		public static final String REQUEST_FIELD = "Request";
-		public static final String AUTHCODE_FIELD = "AuthCode";
+		public static final String AUTHCODE_FIELD = "AuthToken";
 		public static final String PARAMS_FIELD = "Params";
 
 		public static final JSONObject pack(String authCode, EMSG_TYPE type,

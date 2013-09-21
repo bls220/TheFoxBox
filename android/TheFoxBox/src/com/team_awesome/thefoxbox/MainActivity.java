@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
@@ -49,7 +50,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			String query = intent.getStringExtra(SearchManager.QUERY);
 			CommThread comms = new CommThread();
-			comms.search(this,query);
+			comms.search(this, query);
 			comms.start();
 		}
 
@@ -150,7 +151,10 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	@Override
 	public void searchCallback(SongItem[] results) {
-		//TODO: look at results
+		// TODO: look at results
+		for (SongItem song : results) {
+			Log.d(MainActivity.TAG,String.format("Artist: %s", song.getArtist()));
+		}
 	}
 
 	@Override
