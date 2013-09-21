@@ -42,4 +42,10 @@ type Song struct {
 	Artist, Album, Title string
 }
 
-
+type Vote struct {
+	Id int
+	mood Mood
+	song Song
+	user User
+	like bool
+}
