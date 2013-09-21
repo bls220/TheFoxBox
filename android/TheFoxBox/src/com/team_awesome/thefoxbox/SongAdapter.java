@@ -3,6 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -19,14 +21,21 @@ import android.widget.TextView;
 public class SongAdapter extends ArrayAdapter<SongItem>{
 
     Context context; 
-    int layoutResourceId;    
-    SongItem data[] = null;
+    static final int layoutResourceId = R.layout.list_item_song;    
+    ArrayList<SongItem> data = null;
     
-    public SongAdapter(Context context, int layoutResourceId, SongItem[] data) {
+    public SongAdapter(Context context) {
+    	this(context,new SongItem[0]);
+    }
+    
+    public SongAdapter(Context context, SongItem[] data) {
         super(context, layoutResourceId, data);
-        this.layoutResourceId = layoutResourceId;
         this.context = context;
-        this.data = data;
+        
+        this.data = new ArrayList<SongItem>();
+        for( SongItem song : data){
+        	this.data.add(song);
+        }
     }
 
     @Override
@@ -51,7 +60,7 @@ public class SongAdapter extends ArrayAdapter<SongItem>{
             holder = (SongHolder)row.getTag();
         }
         
-        SongItem song = data[position];
+        SongItem song = data.get(position);
         holder.txtTitle.setText(song.getTitle());
         holder.txtArtist.setText(song.getArtist());
         //TODO: holder.imgArt.setImageURI(uri);
