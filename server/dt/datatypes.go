@@ -39,7 +39,7 @@ func (ro Room) AverageMood() Mood {
 
 type Song struct {
 	Id int
-	Artist, Album, Title string
+	Artist, Album, Title, Genre string
 }
 
 type Vote struct {
