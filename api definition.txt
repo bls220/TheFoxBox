@@ -15,6 +15,7 @@ JSON descriptions:
 			-Artist: string
 			-Title: string
 			-Votes: int
+			-Id: An id for the song. This id is important because it is what you have to send to the server when requesting/voting on a song
 
 	When logging in:
 		-Request: "login"
@@ -24,5 +25,18 @@ JSON descriptions:
 	
 	When submitting moods:
 		-Request: "moodchange"
+		-AuthToken: The token retrieved from logging in
 		-Params:
 			-Mood: String representing the moods. There must be exactly three values separated by semicolons
+	
+	When doing searches:
+		-Request: "search"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			-Term: String to search for (searches through albums, artist, and title)
+	
+	When submitting a song:
+		-Request: "submit"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			-Id: Song id to submit to the queue
