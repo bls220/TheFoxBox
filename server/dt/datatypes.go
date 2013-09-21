@@ -18,6 +18,7 @@ type User struct {
 	Id int
 	Name string
 	CurMood Mood
+	Admin bool
 }
 
 // Represents a set of users in a room

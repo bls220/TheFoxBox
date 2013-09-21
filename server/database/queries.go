@@ -7,11 +7,17 @@ import (
 	"fmt"
 )
 
+const MOOD_RANGE int = 10;
+
 func GetUser(name string) {
 	
 }
-func AddUser(user dt.User){
-	
+func AddUser(user dt.User) error{
+	f := func(db *sql.DB) error {
+		_, err := db.Exec(fmt.Sprintf("INSERT into user(name,admin) values('%s','%d')",user.Name,user.Admin));
+		return err
+	}
+	return doTransaction(f)
 }
 
 func AddSongs(songs []dt.Song) error {
@@ -34,20 +40,26 @@ func AddVote(vote dt.Vote) error {
 	return doTransaction(f)
 }
 func GetSongsByString(search string) ([]dt.Song, error) {
-	str := "%"+search + "%"
+	str := "%"+search+"%"
 	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song WHERE title LIKE '%s'", str))
 }
 
 func GetSongsByRoom(room dt.Room){
-
+	//return getSongsGeneric("")
 } 
+
+func GetSongsByMood(mood dt.Mood) ([]dt.Song, error) {
+	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
+										mood.G-MOOD_RANGE,mood.G+MOOD_RANGE,
+										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE))
+}
 
 func GetSongs() ([]dt.Song, error) {
 	return getSongsGeneric("SELECT id, title FROM song")
 }
 
 func GetSongsByChaos(num int) ([]dt.Song, error) {
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song ORDER BY RANDOM() limit %d", num))
+	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song ORDER BY RANDOM() LIMIT %d", num))
 }
 
 
@@ -99,5 +111,3 @@ func doTransaction(call DBCallback) error {
 		return nil
 	}
 }
-
-
