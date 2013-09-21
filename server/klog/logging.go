@@ -6,8 +6,8 @@ import (
 
 type Module string
 
-func Info(m Module, desc string) {
-	errs<-AppErr{m, false, desc, nil,}
+func Info(m Module, desc...interface{}) {
+	errs<-AppErr{m, false, fmt.Sprint(desc...), nil,}
 }
 func Warning(m Module, desc string, err error) {
 	errs<-AppErr{m, false, desc, err,}

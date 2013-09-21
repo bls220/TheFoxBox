@@ -21,6 +21,7 @@ func handleConn(conn net.Conn, h ConnHandler) {
 }
 
 func runServer(addr string, h ConnHandler) {
+	klog.Info(SockServ, "Opening on port ", addr)
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)

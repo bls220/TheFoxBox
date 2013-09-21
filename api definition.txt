@@ -1,0 +1,14 @@
+
+Current definition of api:
+
+	Every message (android to go, go to android) consists of a JSON object.
+	The object is sent like normal text, but is prepended by the length of the json object.
+		The length is encoded as a 4-byte little-endian value.
+
+JSON descriptions:
+	A song list:
+		A list of JSON objects with the following fields:
+			-Album: string
+			-Artist: string
+			-Title: string
+			-Votes: int
