@@ -3,7 +3,6 @@ package database
 import (
 	_ "github.com/mattn/go-sqlite3"
 	"../dt"
-	"log"
 	"database/sql"
 	"fmt"
 )
@@ -82,7 +81,7 @@ func GetSongsByChaos(num int) ([]dt.Song, error) {
 	if err := doTransaction(f); err != nil {
 		return nil, err
 	}
-	return song, nil
+	return songs, nil
 }
 
 type DBCallback func(*sql.DB) error
