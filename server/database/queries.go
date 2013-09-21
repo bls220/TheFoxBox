@@ -47,7 +47,7 @@ func GetSongsByString(search string) ([]dt.Song, error) {
 
 
 func GetSongsByMood(mood dt.Mood) ([]dt.Song, error) {
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",
+	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE like=\"1\" AND r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",
 										mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
 										mood.G-MOOD_RANGE,mood.G+MOOD_RANGE,
 										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE))
@@ -67,7 +67,7 @@ func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
 	}
 	
 	sql = `select avg(r) as avgr, avg(g) as avgg, avg(b) as avgb, song
-				from vote where user IN (` + idStr + `) GROUP BY song HAVING ` +
+				from vote where user IN (` + idStr + `) AND like="1" AND GROUP BY song HAVING ` +
 				fmt.Sprintf("avgr BETWEEN %d AND %d AND avgg BETWEEN %d AND %d AND avgb BETWEEN %d AND %d",
 										avgMood.R-MOOD_RANGE,avgMood.R+MOOD_RANGE,
 										avgMood.G-MOOD_RANGE,avgMood.G+MOOD_RANGE,
