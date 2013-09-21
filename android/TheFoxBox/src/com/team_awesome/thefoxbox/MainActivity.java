@@ -2,6 +2,10 @@ package com.team_awesome.thefoxbox;
 
 import java.util.Locale;
 
+import android.app.ActionBar;
+import android.app.SearchManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -16,6 +20,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity {
@@ -36,6 +41,17 @@ public class MainActivity extends FragmentActivity {
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
+	
+	@Override
+	protected void onNewIntent(Intent intent){
+		setIntent(intent);
+	    // Get the intent, verify the action and get the query
+	    if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+		String query = intent.getStringExtra(SearchManager.QUERY);
+	      //TODO: doMySearch(query);
+	    }
+		
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +66,9 @@ public class MainActivity extends FragmentActivity {
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
+		
+		//Set up action bar
+		ActionBar bar = getActionBar();
 
 	}
 
@@ -57,6 +76,13 @@ public class MainActivity extends FragmentActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		
+	    // Get the SearchView and set the searchable configuration
+	    SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+	    SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+	    // Assumes current activity is the searchable activity
+	    searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+	    
 		return true;
 	}
 

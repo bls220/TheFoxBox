@@ -15,3 +15,14 @@ JSON descriptions:
 			-Artist: string
 			-Title: string
 			-Votes: int
+
+	When logging in:
+		-Request: "login"
+		-Params:
+			-Name: Name of the user
+			// TODO: probably need to add some more fields here
+	
+	When submitting moods:
+		-Request: "moodchange"
+		-Params:
+			-Mood: String representing the moods. There must be exactly three values separated by semicolons

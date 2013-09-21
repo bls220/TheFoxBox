@@ -15,6 +15,6 @@ import "fmt"
 func main() {
 	fmt.Println("Started")
 	//Scan("F:/jukebox")
-	runServer(":5853", songlist)
+	runServer(":5853", GotConn)
 	select{}
 }

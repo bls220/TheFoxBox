@@ -1,0 +1,3 @@
+
+Todo list:
+	TODO: DB: marks where I need to hook in an implementation from the DB
