@@ -1,15 +1,14 @@
-package main
+package klog
 
 import (
 	"fmt"
 )
 
 type Module string
-const (
-	SockServ Module = "Socket Server"
-)
 
-
+func Info(m Module, desc string) {
+	errs<-AppErr{m, false, desc, nil,}
+}
 func Warning(m Module, desc string, err error) {
 	errs<-AppErr{m, false, desc, err,}
 }

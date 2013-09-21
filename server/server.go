@@ -3,15 +3,20 @@ package main
 
 import (
 	"net"
+	"./klog"
 )
 
+var SockServ = klog.Module("Socket Server")
+
+// Don't need to close the conneciton when done.
+// errors returned will be logged accordingly.
 type ConnHandler func(net.Conn) error
 
 func handleConn(conn net.Conn, h ConnHandler) {
 	defer conn.Close()
 	
 	if err := h(conn); err != nil {
-		Warning(SockServ, "serving connection: ", err)
+		klog.Warning(SockServ, "serving connection: ", err)
 	}
 }
 
@@ -23,7 +28,7 @@ func runServer(addr string, h ConnHandler) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			Warning(SockServ, "accepting connection: ", err)
+			klog.Warning(SockServ, "accepting connection: ", err)
 			continue
 		}
 		go handleConn(conn, h)
