@@ -44,6 +44,10 @@ JSON descriptions:
 		-Params:
 			-Term: String to search for (searches through albums, artist, and title)
 	
+<<<<<<< HEAD
+
+	When submitting a song to be played:
+=======
 		Returns:
 			A song list
 	
@@ -55,11 +59,11 @@ JSON descriptions:
 			-Amt: The amount to vote. Should be -1 or 1.
 	
 	When submitting a song:
+>>>>>>> API update, DJ bugfixes
 		-Request: "submit"
 		-AuthToken: The token retrieved from logging in
 		-Params:
 			-Id: Song id to submit to the queue
-		
 		Returns:
 			A JSON object with "Ret" equal to "" (a zero-length string) for success and a descriptive reason why
 				they could not add the song if the song could not be queued (recently played, etc)
