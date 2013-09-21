@@ -2,23 +2,26 @@
 package main
 
 import (
-	//"errors"
-	
+	"./dt"
+	//"./database"
 	"path/filepath"
 	"strings"
 	"os"
 )
 
-import "fmt"
-
-func Scan(dir string) {
-	err := filepath.Walk(dir, makeWalkFunc(dir))
-	if err != nil {
-		fmt.Println("ERR WALKING:", err)
-	}
+type slHolder struct {
+	sl []dt.Song
 }
 
-func makeWalkFunc(prefix string) filepath.WalkFunc {
+func Scan(dir string) error {
+	sl := slHolder{ make([]dt.Song, 0, 100) }
+	if err := filepath.Walk(dir, makeWalkFunc(dir, &sl)); err != nil {
+		return err
+	}
+	return nil//database.AddSongs(sl.sl)
+}
+
+func makeWalkFunc(prefix string, sl*slHolder) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
@@ -37,7 +40,7 @@ func makeWalkFunc(prefix string) filepath.WalkFunc {
 		path = strings.Replace(path, "\\", "/", -1)
 		
 		spl := strings.Split(path, "/")
-		fmt.Println(strings.Join(spl, "||"))
+		sl.sl = append(sl.sl, dt.Song{Artist: spl[0], Album: spl[1], Title: spl[2], })
 		
 		return nil
 	}
