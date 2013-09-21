@@ -1,3 +1,4 @@
 
 Todo list:
 	TODO: DB: marks where I need to hook in an implementation from the DB
+	TODO: AI: marks when I need to hook into the AI of deciding when a song is worth playing.
