@@ -5,6 +5,7 @@ import (
 	"../dt"
 	"database/sql"
 	"fmt"
+	"strconv"
 )
 
 const MOOD_RANGE int = 10;
@@ -44,14 +45,34 @@ func GetSongsByString(search string) ([]dt.Song, error) {
 	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song WHERE title LIKE '%s'", str))
 }
 
-func GetSongsByRoom(room dt.Room){
-	//return getSongsGeneric("")
-} 
 
 func GetSongsByMood(mood dt.Mood) ([]dt.Song, error) {
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
+	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",
+										mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
 										mood.G-MOOD_RANGE,mood.G+MOOD_RANGE,
 										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE))
+}
+
+func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
+	avgMood := room.AverageMood()
+	ids := room.GetUserIdsInRoom()
+	
+	if len(ids) == 0 {
+		return []dt.Song{}, nil
+	}
+	
+	idStr := `"` + strconv.Itoa(ids[0]) + `"`
+	for _, id := range ids[1:] {
+		idStr += `,"` + strconv.Itoa(id) + `"`
+	}
+	
+	sql = `select avg(r) as avgr, avg(g) as avgg, avg(b) as avgb, song
+				from vote where user IN (` + idStr + `) GROUP BY song HAVING ` +
+				fmt.Sprintf("avgr BETWEEN %d AND %d AND avgg BETWEEN %d AND %d AND avgb BETWEEN %d AND %d",
+										avgMood.R-MOOD_RANGE,avgMood.R+MOOD_RANGE,
+										avgMood.G-MOOD_RANGE,avgMood.G+MOOD_RANGE,
+										avgMood.B-MOOD_RANGE,avgMood.B+MOOD_RANGE)
+	return getSongsGeneric(sql)
 }
 
 func GetSongs() ([]dt.Song, error) {

@@ -87,7 +87,7 @@ func (s*DJ) AddSong(songid, points int) string {
 	// TODO: DB: Get song info here (caches the song value so that we don't have to do a db hit
 	//    every time we want to do something.
 	song := SongPoint{
-		dt.Song{songid, "Dummy Artist", "Dummy album", "Dummy title"},
+		dt.Song{songid, "Dummy Artist", "Dummy album", "Dummy title", ""},
 		points,
 	}
 	
