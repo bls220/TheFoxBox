@@ -40,9 +40,10 @@ func AddVote(vote dt.Vote) error {
 	}
 	return doTransaction(f)
 }
+
 func GetSongsByString(search string) ([]dt.Song, error) {
 	str := "%"+search+"%"
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song WHERE title LIKE '%s'", str))
+	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song WHERE title LIKE '%s' LIMIT 100", str))
 }
 
 
