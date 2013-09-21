@@ -1,11 +1,9 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"os"
 )
 
 /*
@@ -20,52 +18,12 @@ create table song (id integer not null primary key, name text);
 	delete from user;
 */
 func Test() {
-	os.Remove("./foo.db")
-
-	db, err := sql.Open("sqlite3", "./foo.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	sql := `create table user (
-		id 		integer not null primary key, 
-		name	text, 
-		admin	integer
-		);
-		delete from user;`
-	_, err = db.Exec(sql)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sql)
-		return
-	}
-
-	sql = `create table song (
-		id 		integer not null primary key, 
-		name 	text
-		);
-		delete from song;`
-	_, err = db.Exec(sql)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sql)
-		return
-	}
-
-	sql = `create table user_song (
-			id		integer not null primary key, 
-			song 	references song(id),
-			user 	references user(id),
-			like	integer,
-			colour	text
-			);
-		delete from song;`
-	_, err = db.Exec(sql)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sql)
-		return
-	}
-
-
+	DestroyDB()
+	CreateUserTable()
+	CreateSongTable()
+	CreateUserSongTable()
+	db := GetOpenDB()
+	
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
