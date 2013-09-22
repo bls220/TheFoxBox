@@ -57,20 +57,16 @@ func (req*AndroidRequest) require(keys...string) bool {
 	return false
 }
 
-func procSongList(req string, conn*AndroidRequest) error {
-	dummyData := struct {
+func sendSongList(req string, songs[]dt.Song, conn*AndroidRequest) error {
+	data := struct {
 		Request string
 		Songs []dt.Song
 	} {
 		req,
-		[]dt.Song{
-			dt.Song{ 0, "Kevin and the Malachowskis", "Bob", "Kevin's Song", ""},
-			dt.Song{ 1, "Bob and the Joes", "Kevin", "Bob's Song", ""},
-			dt.Song{ 2, "Jesse and the girls", "Untitled", "Jesse's girl", ""},
-		},
+		songs,
 	}
 	
-	return conn.Respond(dummyData)
+	return conn.Respond(data)
 }
 
 func GotConn(conn net.Conn) error {
@@ -221,8 +217,12 @@ func procSearch(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 
-	//TODO: DB: search for this
-	return procSongList("search", req)
+	ret, err := database.GetSongsByString(req.Params["Term"])
+	if err != nil {
+		return nil
+	}
+	
+	return sendSongList("search", ret, req)
 }
 
 func procVote(req*AndroidRequest) error {
@@ -230,13 +230,17 @@ func procVote(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 	
-	//TODO: DB: Add this vote to the DB
 	if id, err := strconv.Atoi(req.Params["Id"]); err != nil {
 		return err
 	} else if votes, err := strconv.Atoi(req.Params["Amt"]); err != nil {
 		return err
 	} else {
 		theDJ.Vote(id, votes)
+		liked := true
+		if votes < 0 {
+			liked = false
+		}
+		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: liked,})
 	}
 	return nil
 }
@@ -246,10 +250,11 @@ func procSubmit(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 	
-	//TODO: DB: Add this submission as a pseudo-vote to the DB
 	if id, err := strconv.Atoi(req.Params["Id"]); err != nil {
 		return err
 	} else {
+		// Requesting a song counts as a vote
+		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: true,})
 		// TODO: AI: Calculate predicted initial points of the song.
 		err := theDJ.AddSong(id, 0)
 		ret := struct {

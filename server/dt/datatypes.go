@@ -35,7 +35,7 @@ type Song struct {
 type Vote struct {
 	Id int
 	Mood Mood
-	Song Song
-	User User
+	SongId int
+	UserId int
 	Like bool
 }
