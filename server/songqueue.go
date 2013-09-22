@@ -40,7 +40,7 @@ func (s*SongQueue) Pop() interface{} {
 }
 
 //Singleton
-var theDJ = DJ{}
+var theDJ = DJ{recent:make(map[int]B),}
 type DJ struct {
 	// Must be used to guard all methods
 	sync.Mutex
@@ -88,17 +88,21 @@ func (s*DJ) prime() error {
 	needSongs := 6 - s.songs.Len()
 	s.Unlock() // Don't lock during this (db could block)
 
-	if needSongs > 0 {
+	for needSongs > 0 {
 		newSongs, err := SuggestSongs(needSongs)
-		if err == nil {
-			s.Lock()
-			for _,x := range newSongs {
-				heap.Push(&s.songs, SongPoint{x, 0})
+		if err != nil {
+			if s.songs.Len() == 0 {
+				return err
 			}
-			s.Unlock()
-		} else if s.songs.Len() == 0 {
-			return err //Ignore the error until we're out of songs
+			return nil // Ignore the error while we still have stuff left
 		}
+		s.Lock()
+		for _,x := range newSongs {
+			if !s.addSong(x, 0, true) {
+				needSongs--
+			}
+		}
+		s.Unlock()
 	}
 	
 	return nil
@@ -169,17 +173,14 @@ func (s*DJ) Vote(songid, points int) string {
 	return ""
 }
 
-func (s*DJ) AddSong(songid, points int) string {
-	s.Lock()
-	defer s.Unlock()
-	
-	if _, ok := s.recent[songid]; ok {
-		return "Sorry, this song has been played too recently!"
-	}
-	
-	song, err := database.GetSong(songid)
-	if err != nil {
-		return err.Error()
+// The lock NEEDS to be held before calling this method!
+// Returns true on error
+func (s*DJ) addSong(song dt.Song, points int, checkMap bool) bool {
+	songid := song.Id
+	if checkMap {
+		if _, ok := s.recent[songid]; ok {
+			return true
+		}
 	}
 	
 	songPoint := SongPoint{
@@ -201,7 +202,25 @@ func (s*DJ) AddSong(songid, points int) string {
 	if _, ok := s.recent[prev]; ok {
 		delete(s.recent, prev)
 	}
+	return false
+}
+
+func (s*DJ) AddSong(songid, points int) string {
+	s.Lock()
+	defer s.Unlock()
 	
+	if _, ok := s.recent[songid]; ok {
+		return "Sorry, this song has been played too recently!"
+	}
+	
+	song, err := database.GetSong(songid)
+	if err != nil {
+		return err.Error()
+	}
+	
+	if s.addSong(song, points, false) {
+		return "There was some error adding the song to the queue!"
+	}
 	return "" // Blank for no error
 }
 
