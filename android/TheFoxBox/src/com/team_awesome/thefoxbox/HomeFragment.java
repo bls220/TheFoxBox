@@ -64,9 +64,4 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 	public void searchCallback(SongItem[] results) {
 		// DO Nothing here
 	}
-
-	@Override
-	public void submitCallback(String error) {
-		// Do Nothing here
-	}
 }

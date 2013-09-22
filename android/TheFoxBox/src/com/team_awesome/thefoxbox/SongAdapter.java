@@ -11,18 +11,22 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * @author bsmith
  * 
  */
-public class SongAdapter extends ArrayAdapter<SongItem> {
+public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongClickListener {
 
 	Context context;
 	static final int layoutResourceId = R.layout.list_item_song;
@@ -75,10 +79,11 @@ public class SongAdapter extends ArrayAdapter<SongItem> {
 							val += EVote.DOWN.value();
 						}
 						CommThread comm = new CommThread();
-						comm.vote(null, song.getID(), val);
+						comm.vote(song.getID(), val);
 						comm.start();
 					}
 				});
+		
 
 		return row;
 	}
@@ -89,5 +94,17 @@ public class SongAdapter extends ArrayAdapter<SongItem> {
 		TextView txtArtist;
 		RadioGroup voteGroup;
 		// TextView txtAlbum;
+	}
+
+	@Override
+	public boolean onItemLongClick(AdapterView<?> parent, View view,
+			int position, long id) {
+		SongItem song = (SongItem) parent.getItemAtPosition(position);
+		//Submit item
+		CommThread comm = new CommThread();
+		comm.submit(song.getID());
+		comm.start();
+		Toast.makeText(getContext(), String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
+		return false;
 	}
 }

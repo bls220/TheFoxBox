@@ -7,8 +7,11 @@ import java.util.TimerTask;
 import org.json.JSONException;
 
 import android.app.ActionBar;
+import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -19,6 +22,7 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
@@ -41,6 +45,8 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	private HomeFragment mHomeFrag;
 	private UpcomingFragment mUpcomingFrag;
+
+	private ProgressDialog loadingDialog;
 
 	@Override
 	protected void onNewIntent(Intent intent) {
@@ -74,6 +80,18 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		try {
 			thread.login(this, "Ben");
 			thread.start();
+
+			loadingDialog = new ProgressDialog(this);
+			loadingDialog.setTitle("Please Wait...");
+			loadingDialog.setIndeterminate(true);
+			loadingDialog.setOnCancelListener(new OnCancelListener() {
+				@Override
+				public void onCancel(DialogInterface dialog) {
+					finish();
+				}
+			});
+			loadingDialog.show();
+
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -149,6 +167,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 	@Override
 	public void loginCallback(String authToken) {
 		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
+		loadingDialog.dismiss();
 		updateUI();
 	}
 
@@ -170,11 +189,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 			Log.d(MainActivity.TAG,
 					String.format("Artist: %s", song.getArtist()));
 		}
-	}
-
-	@Override
-	public void submitCallback(String error) {
-		// Do Nothing
 	}
 
 	public void updateUI() {
