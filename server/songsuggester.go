@@ -6,6 +6,7 @@ import (
 	"./klog"
 	"./dt"
 	"errors"
+	"./database"
 )
 
 var Suggestor = klog.Module("Song suggestor")

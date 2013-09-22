@@ -35,7 +35,7 @@ func AddSongs(songs []dt.Song) error {
 
 func AddVote(vote dt.Vote) error {
 	f := func(db *sql.DB) error {
-		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.Song.Id,vote.User.Id,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
+		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.SongId,vote.UserId,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
 		return err
 	}
 	return doTransaction(f)
@@ -161,7 +161,7 @@ func convVotes(rows *sql.Rows) []dt.Vote {
 	for rows.Next() {
 		vote := dt.Vote{}
 		var r , g, b int
-		rows.Scan(&vote.Id,&vote.Song,&vote.User,&vote.Like,&r,&g,&b)
+		rows.Scan(&vote.Id,&vote.SongId,&vote.UserId,&vote.Like,&r,&g,&b)
 		vote.Mood = dt.Mood{R: r, G: g, B: b}
 		votes = append(votes,vote)
 	}
