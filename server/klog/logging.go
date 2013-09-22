@@ -10,6 +10,7 @@ func Info(m Module, desc...interface{}) {
 	errs<-AppErr{m, false, fmt.Sprint(desc...), nil,}
 }
 func Warning(m Module, desc string, err error) {
+	fmt.Println("WARNING:", m, desc, err)
 	errs<-AppErr{m, false, desc, err,}
 }
 

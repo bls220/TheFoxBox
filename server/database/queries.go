@@ -4,7 +4,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"../dt"
 	"database/sql"
-	"fmt"
 	"strconv"
 )
 
@@ -15,7 +14,7 @@ func GetUser(name string) {
 }
 func AddUser(user dt.User) error{
 	f := func(db *sql.DB) error {
-		_, err := db.Exec(fmt.Sprintf("INSERT into user(name,admin) values('%s','%d')",user.Name,user.Admin));
+		_, err := db.Exec("INSERT into user(name,admin) values(?,?)", user.Name, user.Admin);
 		return err
 	}
 	return doTransaction(f)
@@ -24,7 +23,7 @@ func AddUser(user dt.User) error{
 func AddSongs(songs []dt.Song) error {
 	f := func(db *sql.DB) error {
 		for _, x := range songs {
-			if _, err := db.Exec(fmt.Sprintf("INSERT into song(title,album,artist) values('%s','%s','%s')",x.Title,x.Album,x.Artist)); err != nil {
+			if _, err := db.Exec("INSERT into song(title,album,artist) values(?,?,?)",x.Title,x.Album,x.Artist); err != nil {
 				return err
 			}
 		}
@@ -35,26 +34,25 @@ func AddSongs(songs []dt.Song) error {
 
 func AddVote(vote dt.Vote) error {
 	f := func(db *sql.DB) error {
-		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.SongId,vote.UserId,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
+		_, err := db.Exec("INSERT into vote(song,user,like,r,g,b) values(?,?,?,?,?,?)",vote.SongId,vote.UserId,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B);
 		return err
 	}
 	return doTransaction(f)
 }
 
 func GetSongsByString(search string) ([]dt.Song, error) {
-	str := "%"+search+"%"
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song WHERE title LIKE '%s' LIMIT 100", str))
+	return getSongsGeneric("SELECT * FROM song WHERE title LIKE ? LIMIT 100", "%" + search + "%")
 }
 
 
-func GetSongsByMood(mood dt.Mood) ([]dt.Song, error) {
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM vote WHERE like=\"1\" AND r BETWEEN %d AND %d AND g BETWEEN %d AND %d AND b BETWEEN %d AND %d",
+func GetSongsByMood(mood dt.Mood, count int) ([]dt.Song, error) {
+	return getSongsGeneric("SELECT * FROM vote WHERE like=\"1\" AND r BETWEEN ? AND ? AND g BETWEEN ? AND ? AND b BETWEEN ? AND ? LIMIT ? ORDER BY RANDOM()",
 										mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
 										mood.G-MOOD_RANGE,mood.G+MOOD_RANGE,
-										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE))
+										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE, count)
 }
 
-func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
+func GetSongsByRoom(room dt.Room, count int) ([]dt.Song, error) {
 	avgMood := room.AverageMood()
 	ids := room.GetUserIdsInRoom()
 	
@@ -69,11 +67,10 @@ func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
 	
 	sql := `select avg(r) as avgr, avg(g) as avgg, avg(b) as avgb, song
 				from vote where user IN (` + idStr + `) AND like="1" AND GROUP BY song HAVING ` +
-				fmt.Sprintf("avgr BETWEEN %d AND %d AND avgg BETWEEN %d AND %d AND avgb BETWEEN %d AND %d",
-										avgMood.R-MOOD_RANGE,avgMood.R+MOOD_RANGE,
+				"avgr BETWEEN ? AND ? AND avgg BETWEEN ? AND ? AND avgb BETWEEN ? AND ? LIMIT ? ORDER BY RANDOM()"
+	return getSongsGeneric(sql,avgMood.R-MOOD_RANGE,avgMood.R+MOOD_RANGE,
 										avgMood.G-MOOD_RANGE,avgMood.G+MOOD_RANGE,
-										avgMood.B-MOOD_RANGE,avgMood.B+MOOD_RANGE)
-	return getSongsGeneric(sql)
+										avgMood.B-MOOD_RANGE,avgMood.B+MOOD_RANGE, count)
 }
 
 func GetSongs() ([]dt.Song, error) {
@@ -81,15 +78,15 @@ func GetSongs() ([]dt.Song, error) {
 }
 
 func GetSongsByChaos(num int) ([]dt.Song, error) {
-	return getSongsGeneric(fmt.Sprintf("SELECT * FROM song ORDER BY RANDOM() LIMIT %d", num))
+	return getSongsGeneric("SELECT * FROM song ORDER BY RANDOM() LIMIT ?", num)
 }
 
 
-func getSongsGeneric(query string) ([]dt.Song, error){
+func getSongsGeneric(query string, args...interface{}) ([]dt.Song, error){
 
 	songs := []dt.Song{}
 	f := func(db *sql.DB) error {
-		rows, err := db.Query(query)
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			return err
 		}
@@ -103,11 +100,11 @@ func getSongsGeneric(query string) ([]dt.Song, error){
 	return songs, nil
 }
 
-func getVotesGeneric(query string) ([]dt.Vote, error){
+func getVotesGeneric(query string, args...interface{}) ([]dt.Vote, error){
 
 	votes := []dt.Vote{}
 	f := func(db *sql.DB) error {
-		rows, err := db.Query(query)
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			return err
 		}
@@ -125,7 +122,7 @@ func getVotesGeneric(query string) ([]dt.Vote, error){
 
 func GetSongLove(user dt.User, song dt.Song) (int, error){
 	like :=0;
-	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
+	votes, err := getVotesGeneric("SELECT * FROM vote WHERE user IS ? AND song IS ?",user.Id,song.Id)
 	for i := range votes {
 		if votes[i].Like {
 			like++
@@ -143,7 +140,7 @@ func GetSongLove(user dt.User, song dt.Song) (int, error){
 
 func GetBestFavs(num int) ([]dt.Song, error) {
 	
-	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * SUM(like) FROM vote GROUP BY song LIMIT %d", num))
+	votes, err := getVotesGeneric("SELECT * SUM(like) FROM vote GROUP BY song LIMIT ?", num)
 	if err != nil{
 		return nil, err
 	}
