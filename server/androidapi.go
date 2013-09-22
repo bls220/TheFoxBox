@@ -82,7 +82,6 @@ func GotConn(conn net.Conn) error {
 	        ((lens[1]&0xFF) <<  8) |
 	        ((lens[2]&0xFF) << 16) |
 	        ((lens[3]&0xFF) << 24)
-	fmt.Println("LLen=", llen)
 	
 	buf := make([]byte, llen)
 	if _, err := io.ReadFull(conn, buf); err != nil {
@@ -193,7 +192,11 @@ func logInUser(req*AndroidRequest) error {
 func procSongList(req*AndroidRequest) error {
 	if req.getUser() == nil { return TokenNotFound }
 	
-	return sendSongList("search", theDJ.GetQueue(), req)
+	if list, err := theDJ.GetQueue(); err != nil {
+		return err
+	} else {
+		return sendSongList("songlist", list, req)
+	}
 }
 
 func procMoodChange(req*AndroidRequest) error {
