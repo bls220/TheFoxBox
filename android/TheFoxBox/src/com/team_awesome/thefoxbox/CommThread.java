@@ -8,7 +8,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,6 +15,8 @@ import java.util.Map.Entry;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.team_awesome.thefoxbox.SongItem.EVote;
 
 import android.util.Log;
 
@@ -74,6 +75,15 @@ public class CommThread extends Thread {
 		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.SONGLIST, map);
 		mCallback = callback;
 	}
+	
+
+	public void vote(QueryCallbacks callback, int id, int val) {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("Id", ((Integer)id).toString());
+		map.put("Amt", ((Integer)val).toString());
+		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.VOTE, map);
+		mCallback = callback;
+	}
 
 	@Override
 	public void run() {
@@ -96,6 +106,7 @@ public class CommThread extends Thread {
 			}
 			out.write(json.getBytes());
 			out.flush();
+			if( mCallback == null) return; //No response
 			// get response
 			BufferedInputStream in = new BufferedInputStream(
 					mSocket.getInputStream());

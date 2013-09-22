@@ -23,31 +23,6 @@
         android:text="Small Text"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-    <RadioGroup
-        android:id="@+id/songVoteGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/imageViewAlbumArt"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_toRightOf="@+id/textViewSongTitle" >
-
-        <RadioButton
-            android:id="@+id/radio0"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|right"
-            android:checked="false" />
-
-        <RadioButton
-            android:id="@+id/radio1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|right"
-            android:checked="false" />
-
-    </RadioGroup>
-
     <TextView
         android:id="@+id/textViewSongTitle"
         android:layout_width="wrap_content"
@@ -57,5 +32,29 @@
         android:layout_toRightOf="@+id/imageViewAlbumArt"
         android:text="Large Text"
         android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <RadioGroup
+        android:id="@+id/songVoteGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="12dp"
+        android:layout_toRightOf="@+id/textViewSongArtist" >
+
+        <RadioButton
+            android:id="@+id/radioUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|right"
+            android:checked="false" />
+
+        <RadioButton
+            android:id="@+id/radioDown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|right"
+            android:checked="false" />
+    </RadioGroup>
 
 </RelativeLayout>

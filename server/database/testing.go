@@ -18,7 +18,7 @@ func Test() {
 	fmt.Println(GetSongsByString("fox"))
 
 	AddUser(dt.User{Name: "Travis",Admin: true})
-	AddVote(dt.Vote{Song: dt.Song{Id: 1}, User: dt.User{Id: 1}, Like: true, Mood: dt.Mood{10,10,10}})
-	AddVote(dt.Vote{Song: dt.Song{Id: 2}, User: dt.User{Id: 1}, Like: true, Mood: dt.Mood{50,50,50}})
+	AddVote(dt.Vote{SongId: 1, UserId: 1, Like: true, Mood: dt.Mood{10,10,10}})
+	AddVote(dt.Vote{SongId: 2, UserId: 1, Like: true, Mood: dt.Mood{50,50,50}})
 	fmt.Println(GetSongsByMood(dt.Mood{50,50,50}))
 }

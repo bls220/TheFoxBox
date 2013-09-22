@@ -19,9 +19,14 @@ public class SongItem {
 		EVote(){
 			this.id = 0;
 		}
-
-		public int value() {
+		
+		public int value(){
 			return id;
+		}
+
+		@Override
+		public String toString(){
+			return ((Integer)id).toString();
 		}
 	};
 
