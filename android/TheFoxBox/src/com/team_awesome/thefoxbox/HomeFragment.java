@@ -32,8 +32,7 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 				container, false);
 
 		adapterNowPlaying = new SongAdapter(getActivity());
-		((ListView) rootView.findViewById(R.id.listViewNowPlaying))
-				.setAdapter(adapterNowPlaying);
+		((ListView) rootView.findViewById(R.id.listViewNowPlaying)).setAdapter(adapterNowPlaying);
 
 		return rootView;
 	}

@@ -36,14 +36,10 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks {
 		mQueueList = (ListView) rootView.findViewById(R.id.listViewQueue);
 		mSuggestionList = (ListView) rootView
 				.findViewById(R.id.listViewSuggestion);
-
-		// Set song adapters
-		SongItem[] songList = new SongItem[23];
-		for (int i = 0; i < songList.length; i++) {
-			songList[i] = new SongItem();
-		}
-
-		mQueueList.setAdapter(new SongAdapter(getActivity()));
+		
+		SongAdapter queueAdapter = new SongAdapter(getActivity());
+		mQueueList.setAdapter(queueAdapter);
+		mQueueList.setOnItemLongClickListener(queueAdapter);
 		mSuggestionList.setAdapter(new SongAdapter(getActivity()));
 
 		return rootView;
