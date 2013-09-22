@@ -35,7 +35,7 @@ func AddSongs(songs []dt.Song) error {
 
 func AddVote(vote dt.Vote) error {
 	f := func(db *sql.DB) error {
-		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.Song.Id,vote.User.Id,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
+		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.SongId,vote.UserId,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
 		return err
 	}
 	return doTransaction(f)
@@ -141,7 +141,19 @@ func GetSongLove(user dt.User, song dt.Song) (int, error){
 	return like, err
 }
 
-func GetCrowdFavs(num int) {
+func GetBestFavs(num int) ([]dt.Song, error) {
+	
+	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * SUM(like) FROM vote GROUP BY song LIMIT %d", num))
+	if err != nil{
+		return nil, err
+	}
+
+	songs := []dt.Song{}
+
+	for i := range votes {
+		songs = append(songs,votes[i].SongId)
+	}
+	return votes[i],err
 
 }
 
@@ -161,13 +173,12 @@ func convVotes(rows *sql.Rows) []dt.Vote {
 	for rows.Next() {
 		vote := dt.Vote{}
 		var r , g, b int
-		rows.Scan(&vote.Id,&vote.Song,&vote.User,&vote.Like,&r,&g,&b)
+		rows.Scan(&vote.Id,&vote.SongId,&vote.UserId,&vote.Like,&r,&g,&b)
 		vote.Mood = dt.Mood{R: r, G: g, B: b}
 		votes = append(votes,vote)
 	}
 	return votes
 }
-
 type DBCallback func(*sql.DB) error
 func doTransaction(call DBCallback) error {
 	db, err := sql.Open("sqlite3", DB_PATH)
