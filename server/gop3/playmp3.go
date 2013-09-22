@@ -59,6 +59,15 @@ func (m*Mp3Commander) playSong(path string) error {
 		C.ao_play(dev, buf, act)
 		m.schedule()
 	}
+	
+	select {
+		case m.songWait<-B{}:
+		default:
+	}
+	
 	return nil
 }
 
+func (m*Mp3Commander) WaitForSong() {
+	<-m.songWait
+}

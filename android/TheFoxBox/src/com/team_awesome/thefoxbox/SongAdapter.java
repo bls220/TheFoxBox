@@ -82,6 +82,18 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 					}
 				});
 		
+		row.findViewById(R.id.btnSubmit).setOnClickListener(new OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				CommThread comm = new CommThread();
+				comm.submit(song.getID());
+				comm.start();
+				Toast.makeText(getContext(), String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
+			}
+			
+		});
+		
 
 		return row;
 	}

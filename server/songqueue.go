@@ -5,6 +5,8 @@ import (
 	"sync"
 	"container/heap"
 	"sort"
+	"fmt"
+	"./database"
 )
 
 //TODO: AI: When a song is suggested, give some weight to the decision based on how much it thinks the song will be liked.
@@ -38,11 +40,14 @@ func (s*SongQueue) Pop() interface{} {
 }
 
 //Singleton
-var theDJ = DJ{}
+var theDJ = DJ{recent:make(map[int]B),}
 type DJ struct {
 	// Must be used to guard all methods
 	sync.Mutex
 	songs SongQueue
+	
+	nowPlaying dt.Song
+	isPlaying bool
 	
 	// Contains the song ID if the song was 'recently' played
 	recent map [int]B
@@ -63,9 +68,16 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 	ss := SongQueue{cpy}
 	sort.Sort(&ss)
 	
-	ret := make([]dt.Song, len(ss.songs))
+	ll := len(ss.songs)
+	if s.isPlaying {
+		ll++
+	}
+	ret := make([]dt.Song, ll)
+	if s.isPlaying {
+		ret[0] = s.nowPlaying
+	}
 	for i, v := range ss.songs {
-		ret[i] = v.s
+		ret[i+1] = v.s
 	}
 	
 	return ret, nil
@@ -74,31 +86,69 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 func (s*DJ) prime() error {
 	s.Lock()
 	needSongs := 6 - s.songs.Len()
-	s.Unlock() // Don't block during this (db could block)
+	s.Unlock() // Don't lock during this (db could block)
 
-	if needSongs > 0 {
+	for needSongs > 0 {
 		newSongs, err := SuggestSongs(needSongs)
-		if err == nil {
-			s.Lock()
-			for _,x := range newSongs {
-				heap.Push(&s.songs, SongPoint{x, 0})
+		if err != nil {
+			if s.songs.Len() == 0 {
+				return err
 			}
-			s.Unlock()
-		} else if s.songs.Len() == 0 {
-			return err //Ignore the error until we're out of songs
+			return nil // Ignore the error while we still have stuff left
 		}
+		s.Lock()
+		for _,x := range newSongs {
+			if !s.addSong(x, 0, true) {
+				needSongs--
+			}
+		}
+		s.Unlock()
 	}
 	
 	return nil
 }
 
+// This is a terrible way to implement this!
+func (s*DJ) GetPlaylist() <-chan dt.Song {
+	ret := make(chan dt.Song)
+	
+	go s.playlistLoop(ret)
+	
+	return ret
+}
+
+func (s*DJ) playlistLoop(out chan<-dt.Song) {
+	for {
+		song, err := s.GetNextSong()
+		if err != nil {
+			fmt.Println("Error trying to get next song:", err)
+			close(out)
+			return
+		}
+		out <- song
+	}
+}
+
+func (s*DJ) NowPlaying(x dt.Song) {
+	s.Lock()
+	s.isPlaying = true
+	s.nowPlaying = x
+	s.Unlock()
+}
+
+func (s*DJ) SongOver() {
+	s.Lock()
+	s.isPlaying = false
+	s.Unlock()
+}
+
 func (s*DJ) GetNextSong() (dt.Song, error) {
 	if err := s.prime(); err != nil {
-		return dt.Song{}, nil
+		return dt.Song{}, err
 	}
 	s.Lock()
 	defer s.Unlock()
-	return heap.Pop(&s.songs).(dt.Song), nil
+	return heap.Pop(&s.songs).(SongPoint).s, nil
 }
 
 func (s*DJ) Vote(songid, points int) string {
@@ -123,24 +173,23 @@ func (s*DJ) Vote(songid, points int) string {
 	return ""
 }
 
-func (s*DJ) AddSong(songid, points int) string {
-	s.Lock()
-	defer s.Unlock()
-	
-	if _, ok := s.recent[songid]; ok {
-		return "Sorry, this song has been played too recently!"
+// The lock NEEDS to be held before calling this method!
+// Returns true on error
+func (s*DJ) addSong(song dt.Song, points int, checkMap bool) bool {
+	songid := song.Id
+	if checkMap {
+		if _, ok := s.recent[songid]; ok {
+			return true
+		}
 	}
 	
-
-	// TODO: DB: Get song info here (caches the song value so that we don't have to do a db hit
-	//    every time we want to do something.
-	song := SongPoint{
-		dt.Song{songid, "Dummy Artist", "Dummy album", "Dummy title", ""},
+	songPoint := SongPoint{
+		song,
 		points,
 	}
 	
 	s.recent[songid] = B{}
-	heap.Push(&s.songs, song)
+	heap.Push(&s.songs, songPoint)
 	
 	prev := s.recentlyPlayed[s.recentlyPlayedIndex]
 	s.recentlyPlayed[s.recentlyPlayedIndex] = songid
@@ -153,7 +202,25 @@ func (s*DJ) AddSong(songid, points int) string {
 	if _, ok := s.recent[prev]; ok {
 		delete(s.recent, prev)
 	}
+	return false
+}
+
+func (s*DJ) AddSong(songid, points int) string {
+	s.Lock()
+	defer s.Unlock()
 	
+	if _, ok := s.recent[songid]; ok {
+		return "Sorry, this song has been played too recently!"
+	}
+	
+	song, err := database.GetSong(songid)
+	if err != nil {
+		return err.Error()
+	}
+	
+	if s.addSong(song, points, false) {
+		return "There was some error adding the song to the queue!"
+	}
 	return "" // Blank for no error
 }
 
