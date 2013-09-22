@@ -59,7 +59,6 @@ func (req*AndroidRequest) require(keys...string) bool {
 }
 
 func sendSongList(req string, songs[]dt.Song, conn*AndroidRequest) error {
-	fmt.Println("trying to send songlist:", songs)
 	data := struct {
 		Request string
 		Songs []dt.Song
@@ -83,7 +82,6 @@ func GotConn(conn net.Conn) error {
 	        ((lens[1]&0xFF) <<  8) |
 	        ((lens[2]&0xFF) << 16) |
 	        ((lens[3]&0xFF) << 24)
-	fmt.Println("LLen=", llen)
 	
 	buf := make([]byte, llen)
 	if _, err := io.ReadFull(conn, buf); err != nil {
@@ -105,14 +103,11 @@ func GotConn(conn net.Conn) error {
 		case "moodchange":
 			return procMoodChange(req)
 		case "songlist":
-			fmt.Println("IN PROC SONG LIST")
 			return procSongList(req)
 		case "search":
 			return procSearch(req)
 		case "login":
 			return logInUser(req)
-		default:
-			fmt.Println("UNKNOWN REQUEST:", req.Request)
 	}
 	return errors.New(fmt.Sprint("Unknown request:", req))
 }
@@ -195,7 +190,6 @@ func logInUser(req*AndroidRequest) error {
 }
 
 func procSongList(req*AndroidRequest) error {
-	fmt.Println("In procSongList")
 	if req.getUser() == nil { return TokenNotFound }
 	
 	if list, err := theDJ.GetQueue(); err != nil {

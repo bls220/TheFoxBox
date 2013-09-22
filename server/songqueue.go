@@ -5,8 +5,6 @@ import (
 	"sync"
 	"container/heap"
 	"sort"
-	
-	"fmt"
 )
 
 //TODO: AI: When a song is suggested, give some weight to the decision based on how much it thinks the song will be liked.
@@ -57,12 +55,11 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 		return nil, err
 	}
 	
-	fmt.Println("Locking in GetQueue")
 	s.Lock()
 	defer s.Unlock()
 	
 	cpy := make([]SongPoint, len(s.songs.songs))
-	copy(s.songs.songs, cpy)
+	copy(cpy, s.songs.songs)
 	ss := SongQueue{cpy}
 	sort.Sort(&ss)
 	

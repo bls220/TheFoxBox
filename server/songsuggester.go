@@ -9,6 +9,7 @@ import (
 	"./database"
 )
 
+
 var Suggestor = klog.Module("Song suggestor")
 
 func SuggestSongs(count int) (ret []dt.Song, err error) {

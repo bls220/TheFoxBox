@@ -4,7 +4,6 @@ package main
 import (
 	"net"
 	"./klog"
-	"fmt"
 )
 
 var SockServ = klog.Module("Socket Server")
@@ -16,10 +15,7 @@ type ConnHandler func(net.Conn) error
 func handleConn(conn net.Conn, h ConnHandler) {
 	defer conn.Close()
 	
-	fmt.Println("Handle conn starting!")
-	defer fmt.Println("Handle conn ended!")
 	if err := h(conn); err != nil {
-		defer fmt.Println("Found err when running: ", err)
 		klog.Warning(SockServ, "serving connection: ", err)
 	}
 }

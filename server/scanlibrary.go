@@ -45,7 +45,8 @@ func makeWalkFunc(prefix string, sl*slHolder) filepath.WalkFunc {
 		path = strings.Replace(path, "\\", "/", -1)
 		
 		spl := strings.Split(path, "/")
-		sl.sl = append(sl.sl, dt.Song{Artist: spl[0], Album: spl[1], Title: spl[2], })
+		s := dt.Song{Artist: spl[0], Album: spl[1], Title: spl[2], }
+		sl.sl = append(sl.sl, s)
 		
 		return nil
 	}
