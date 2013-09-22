@@ -51,20 +51,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	private HomeFragment mHomeFrag;
 	private UpcomingFragment mUpcomingFrag;
-	private SearchFragment mSearchFrag;
-
-	@Override
-	protected void onNewIntent(Intent intent) {
-		setIntent(intent);
-		// Get the intent, verify the action and get the query
-		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-			String query = intent.getStringExtra(SearchManager.QUERY);
-			CommThread comms = new CommThread();
-			comms.search(this, query);
-			comms.start();
-		}
-
-	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +83,18 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 		return true;
 	}
+	
+	@Override
+	protected void onNewIntent(Intent intent) {
+		setIntent(intent);
+		// Get the intent, verify the action and get the query
+		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+			intent.setClassName(getBaseContext(), "com.team_awesome.thefoxbox.SearchFragment");
+			intent.putExtra(SearchManager.QUERY, intent.getStringExtra(SearchManager.QUERY));
+			startActivity(intent);
+		}
+
+	}
 
 	/**
 	 * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
@@ -121,10 +119,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 				mUpcomingFrag = new UpcomingFragment();
 				fragment = mUpcomingFrag;
 				break;
-			case 2:
-				mSearchFrag = new SearchFragment();
-				fragment = mSearchFrag;
-				break;
 			default:
 				Log.e(TAG, "Fragment created out of bounds.");
 				throw new IndexOutOfBoundsException("Page Viewer doesn't hold "
@@ -136,7 +130,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		@Override
 		public int getCount() {
 			// Show 2 total pages.
-			return 3;
+			return 2;
 		}
 
 		@Override
@@ -169,8 +163,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	@Override
 	public void searchCallback(SongItem[] results) {
-		// TODO: look at results
-		mSearchFrag.doSearch(results);
 	}
 
 	public void updateUI() {
