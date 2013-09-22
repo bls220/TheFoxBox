@@ -1,10 +1,10 @@
 /**
- * 
+ *
  */
 package com.team_awesome.thefoxbox;
 
+import android.widget.TextView;
 import org.json.JSONException;
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -22,20 +22,20 @@ import android.widget.ProgressBar;
 
 /**
  * @author bsmith
- * 
+ *
  */
 public class HomeFragment extends Fragment implements QueryCallbacks {
 
 	private SongAdapter adapterNowPlaying;
-	
+
 	private Button btnLogin;
 	private ProgressBar loginBar;
 	private EditText txtUser;
-	
+
 	public static boolean loggedIn = false;
 
 	/**
-	 * 
+	 *
 	 */
 	public HomeFragment() {
 	}
@@ -46,10 +46,12 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 		View rootView = inflater.inflate(R.layout.fragment_nowplaying,
 				container, false);
 
-		adapterNowPlaying = new SongAdapter(getActivity());
-		ListView nowList = ((ListView) rootView.findViewById(R.id.listViewNowPlaying));
-		nowList.setAdapter(adapterNowPlaying);
-		nowList.setOnItemLongClickListener((OnItemLongClickListener) adapterNowPlaying);
+		/*
+		 * adapterNowPlaying = new SongAdapter(getActivity());
+		   ListView nowList = ((ListView) rootView.findViewById(R.id.listViewNowPlaying));
+		   nowList.setAdapter(adapterNowPlaying);
+		   nowList.setOnItemLongClickListener((OnItemLongClickListener) adapterNowPlaying);
+        */
 
 		btnLogin = (Button) rootView.findViewById(R.id.btnLogin);
 		loginBar = (ProgressBar) rootView.findViewById(R.id.loginBar);
@@ -74,7 +76,7 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 
 			}
 		});
-		
+
 		return rootView;
 	}
 
@@ -102,9 +104,15 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 			@Override
 			public void run() {
 				// Update now playing
-				adapterNowPlaying.clear();
+				// adapterNowPlaying.clear();
 				 if (data2.length > 0)
-				 adapterNowPlaying.add(data2[0]);
+				 // adapterNowPlaying.add(data2[0]);
+				 {
+				     TextView tv = ((TextView) getView().findViewById(R.id.npTitle));
+				     tv.setText(data2[0].getTitle());
+				     tv = ((TextView) getView().findViewById(R.id.npArtist));
+				     tv.setText(data2[0].getArtist());
+				 }
 			}
 		});
 

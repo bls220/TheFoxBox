@@ -18,6 +18,8 @@ type Mp3Commander struct {
 	reqs chan mp3Request
 	kill chan B
 	
+	songWait chan B
+	
 	handle *C.mpg123_handle
 	driver C.int
 }
@@ -49,6 +51,7 @@ func InitMp3() *Mp3Commander {
 		acts: make(chan mp3Action), //TODO: buffed?
 		reqs: make(chan mp3Request, 5),
 		kill: make(chan B),
+		songWait: make(chan B),
 	}
 	
 	go mp3Loop(ret)

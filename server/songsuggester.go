@@ -18,7 +18,7 @@ func SuggestSongs(count int) (ret []dt.Song, err error) {
 	tries := 0
 	for count > 0 {
 		var thisTry []dt.Song
-		/*
+		
 		switch r.Intn(4) {
 			case 0:
 				thisTry, err = database.GetSongsByRoom(loggedInUsers, count)
@@ -28,8 +28,8 @@ func SuggestSongs(count int) (ret []dt.Song, err error) {
 				thisTry, err = database.GetSongsByChaos(count)
 			case 3:
 				thisTry, err = database.GetBestFavs(count)
-		}*/
-		thisTry, err = database.GetSongsByChaos(count)
+		}
+		//thisTry, err = database.GetSongsByChaos(count)
 		
 		if err != nil {
 			klog.Warning(Suggestor, "choosing a song", err)

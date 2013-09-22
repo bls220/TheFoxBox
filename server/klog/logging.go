@@ -10,8 +10,7 @@ func Info(m Module, desc...interface{}) {
 	errs<-AppErr{m, false, fmt.Sprint(desc...), nil,}
 }
 func Warning(m Module, desc string, err error) {
-	fmt.Println("WARNING:", m, desc, err)
-	errs<-AppErr{m, false, desc, err,}
+	errs<-AppErr{m, false, "WARNING: " + desc, err,}
 }
 
 func Fatal(m Module, desc string, err error) {
@@ -28,7 +27,7 @@ func (a AppErr) Error() string {
 	if a.fatal {
 		a.desc = "FATAL: " + a.desc
 	}
-	return fmt.Sprint(a.desc, a.err)
+	return fmt.Sprint("In ", a.module, ": ", a.desc, " caused ", a.err)
 }
 
 func purgeErrs(errs <-chan AppErr) {
