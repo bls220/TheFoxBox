@@ -11,6 +11,8 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,13 +21,14 @@ import org.json.JSONObject;
 import com.team_awesome.thefoxbox.SongItem.EVote;
 
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * @author bsmith
  * 
  */
 public class CommThread extends Thread {
-	private static final String IPADDR = "67.194.107.169 ";
+	private static final String IPADDR = "192.168.1.108";// "67.194.107.169";
 	private static final int PORT = 5853;
 
 	public static String mAuthCode;
@@ -75,59 +78,70 @@ public class CommThread extends Thread {
 		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.SONGLIST, map);
 		mCallback = callback;
 	}
-	
 
-	public void vote(QueryCallbacks callback, int id, int val) {
+	public void vote(int id, int val) {
 		Map<String, String> map = new HashMap<String, String>();
-		map.put("Id", ((Integer)id).toString());
-		map.put("Amt", ((Integer)val).toString());
+		map.put("Id", ((Integer) id).toString());
+		map.put("Amt", ((Integer) val).toString());
 		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.VOTE, map);
-		mCallback = callback;
+		mCallback = null;
+	}
+
+	public void submit(int id) {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("Id", ((Integer) id).toString());
+		mJSONOut = JSONPacker.pack(mAuthCode, EMSG_TYPE.SUBMIT, map);
+		mCallback = null;
 	}
 
 	@Override
 	public void run() {
-		try {
-			mSocket = getSocket();
-			if (mSocket == null || !mSocket.isConnected() || mJSONOut == null) {
-				return;
-			}
+		boolean retry = true;
+		while (retry == true) {
+			try {
+				mSocket = getSocket();
+				if (mSocket == null || !mSocket.isConnected()
+						|| mJSONOut == null) {
+					return;
+				}
 
-			// Send message
+				// Send message
 
-			BufferedOutputStream out = new BufferedOutputStream(
-					mSocket.getOutputStream());
-			String json = mJSONOut.toString();
-			Log.d(MainActivity.TAG, json);
-			int len = json.length();
-			for (int i = 0; i < 4; i++) {
-				out.write(len);
-				len >>= 8;
-			}
-			out.write(json.getBytes());
-			out.flush();
-			if( mCallback == null) return; //No response
-			// get response
-			BufferedInputStream in = new BufferedInputStream(
-					mSocket.getInputStream());
-			len = in.read() | (in.read() << 8) | (in.read() << 16)
-					| (in.read() << 24);
-			if (len < 0) {
-				throw new IOException("Invalid message length.");
-			}
-			byte[] buf = new byte[len];
-			int cur = 0;
-			do {
-				cur += in.read(buf, cur, len - cur);
-			} while (cur < len);
+				BufferedOutputStream out = new BufferedOutputStream(
+						mSocket.getOutputStream());
+				String json = mJSONOut.toString();
+				Log.d(MainActivity.TAG, json);
+				int len = json.length();
+				for (int i = 0; i < 4; i++) {
+					out.write(len);
+					len >>= 8;
+				}
+				out.write(json.getBytes());
+				out.flush();
+				if (mCallback == null)
+					return; // No response
+				// get response
+				BufferedInputStream in = new BufferedInputStream(
+						mSocket.getInputStream());
+				len = in.read() | (in.read() << 8) | (in.read() << 16)
+						| (in.read() << 24);
+				if (len < 0) {
+					throw new IOException("Invalid message length.");
+				}
+				byte[] buf = new byte[len];
+				int cur = 0;
+				do {
+					cur += in.read(buf, cur, len - cur);
+				} while (cur < len);
 
-			mJSONOut = new JSONObject(new String(buf));
-			// Handle response
-			handleResponse();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
+				JSONObject jsonIn = new JSONObject(new String(buf));
+				// Handle response
+				handleResponse(jsonIn);
+			} catch (Exception e) {
+				// retry
+				break;
+			}
+			retry = false;
 		}
 	}
 
@@ -153,19 +167,16 @@ public class CommThread extends Thread {
 		return list;
 	}
 
-	private void handleResponse() {
+	private void handleResponse(JSONObject jsonIn) {
 		try {
-			String type = mJSONOut.getString(JSONPacker.REQUEST_FIELD);
+			String type = jsonIn.getString(JSONPacker.REQUEST_FIELD);
 			if (type.equals(EMSG_TYPE.LOGIN.toString())) {
-				mAuthCode = mJSONOut.getString(JSONPacker.AUTHCODE_FIELD);
+				mAuthCode = jsonIn.getString(JSONPacker.AUTHCODE_FIELD);
 				mCallback.loginCallback(mAuthCode);
-			} else if (type.equals(EMSG_TYPE.SUBMIT.toString())) {
-				mCallback.submitCallback(mJSONOut
-						.getString(JSONPacker.REQUEST_FIELD));
 			} else if (type.equals(EMSG_TYPE.SEARCH.toString())) {
-				mCallback.searchCallback(getSongList(mJSONOut));
+				mCallback.searchCallback(getSongList(jsonIn));
 			} else if (type.equals(EMSG_TYPE.SONGLIST.toString())) {
-				mCallback.queueCallback(getSongList(mJSONOut));
+				mCallback.queueCallback(getSongList(jsonIn));
 			}
 			// TODO: others
 		} catch (JSONException e) {

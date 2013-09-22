@@ -82,10 +82,4 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks {
 		// Do Nothing
 	}
 
-	@Override
-	public void submitCallback(String error) {
-		// TODO Check for errors
-
-	}
-
 }
