@@ -125,9 +125,9 @@ func getVotesGeneric(query string) ([]dt.Vote, error){
 
 func GetSongLove(user dt.User, song dt.Song) (int, error){
 	like :=0;
-	songs, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
-	for i := range songs {
-		if songs[i].Like {
+	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
+	for i := range votes {
+		if votes[i].Like {
 			like++
 		} else{
 			like--
@@ -148,15 +148,24 @@ func GetBestFavs(num int) ([]dt.Song, error) {
 		return nil, err
 	}
 
-	songs := []dt.Song{}
-
-	for i := range votes {
-		songs = append(songs,votes[i].SongId)
-	}
-	return votes[i],err
+	return GetSongsFromVotes(votes)
 
 }
 
+func GetSongsFromVotes(votes []dt.Vote) ([]dt.Song, error){
+	if len(votes) == 0 {
+		return []dt.Song{}, nil
+	}
+	
+	idStr := `"` + strconv.Itoa(votes[0].SongId) + `"`
+	for i := range votes {
+		idStr += `,"` + strconv.Itoa(votes[i].SongId) + `"`
+	}
+
+	sql := `SELECT * FROM song WHERE id IN (` + idStr + `)`
+
+	return getSongsGeneric(sql)
+}
 
 func convSongs(rows *sql.Rows) []dt.Song {
 	songs := []dt.Song{}
@@ -179,6 +188,7 @@ func convVotes(rows *sql.Rows) []dt.Vote {
 	}
 	return votes
 }
+
 type DBCallback func(*sql.DB) error
 func doTransaction(call DBCallback) error {
 	db, err := sql.Open("sqlite3", DB_PATH)
