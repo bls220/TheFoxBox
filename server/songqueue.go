@@ -5,6 +5,8 @@ import (
 	"sync"
 	"container/heap"
 	"sort"
+	"fmt"
+	"./database"
 )
 
 //TODO: AI: When a song is suggested, give some weight to the decision based on how much it thinks the song will be liked.
@@ -44,6 +46,9 @@ type DJ struct {
 	sync.Mutex
 	songs SongQueue
 	
+	nowPlaying dt.Song
+	isPlaying bool
+	
 	// Contains the song ID if the song was 'recently' played
 	recent map [int]B
 	recentlyPlayed [100]int
@@ -63,9 +68,16 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 	ss := SongQueue{cpy}
 	sort.Sort(&ss)
 	
-	ret := make([]dt.Song, len(ss.songs))
+	ll := len(ss.songs)
+	if s.isPlaying {
+		ll++
+	}
+	ret := make([]dt.Song, ll)
+	if s.isPlaying {
+		ret[0] = s.nowPlaying
+	}
 	for i, v := range ss.songs {
-		ret[i] = v.s
+		ret[i+1] = v.s
 	}
 	
 	return ret, nil
@@ -74,7 +86,7 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 func (s*DJ) prime() error {
 	s.Lock()
 	needSongs := 6 - s.songs.Len()
-	s.Unlock() // Don't block during this (db could block)
+	s.Unlock() // Don't lock during this (db could block)
 
 	if needSongs > 0 {
 		newSongs, err := SuggestSongs(needSongs)
@@ -92,13 +104,47 @@ func (s*DJ) prime() error {
 	return nil
 }
 
+// This is a terrible way to implement this!
+func (s*DJ) GetPlaylist() <-chan dt.Song {
+	ret := make(chan dt.Song)
+	
+	go s.playlistLoop(ret)
+	
+	return ret
+}
+
+func (s*DJ) playlistLoop(out chan<-dt.Song) {
+	for {
+		song, err := s.GetNextSong()
+		if err != nil {
+			fmt.Println("Error trying to get next song:", err)
+			close(out)
+			return
+		}
+		out <- song
+	}
+}
+
+func (s*DJ) NowPlaying(x dt.Song) {
+	s.Lock()
+	s.isPlaying = true
+	s.nowPlaying = x
+	s.Unlock()
+}
+
+func (s*DJ) SongOver() {
+	s.Lock()
+	s.isPlaying = false
+	s.Unlock()
+}
+
 func (s*DJ) GetNextSong() (dt.Song, error) {
 	if err := s.prime(); err != nil {
-		return dt.Song{}, nil
+		return dt.Song{}, err
 	}
 	s.Lock()
 	defer s.Unlock()
-	return heap.Pop(&s.songs).(dt.Song), nil
+	return heap.Pop(&s.songs).(SongPoint).s, nil
 }
 
 func (s*DJ) Vote(songid, points int) string {
@@ -131,16 +177,18 @@ func (s*DJ) AddSong(songid, points int) string {
 		return "Sorry, this song has been played too recently!"
 	}
 	
-
-	// TODO: DB: Get song info here (caches the song value so that we don't have to do a db hit
-	//    every time we want to do something.
-	song := SongPoint{
-		dt.Song{songid, "Dummy Artist", "Dummy album", "Dummy title", ""},
+	song, err := database.GetSong(songid)
+	if err != nil {
+		return err.Error()
+	}
+	
+	songPoint := SongPoint{
+		song,
 		points,
 	}
 	
 	s.recent[songid] = B{}
-	heap.Push(&s.songs, song)
+	heap.Push(&s.songs, songPoint)
 	
 	prev := s.recentlyPlayed[s.recentlyPlayedIndex]
 	s.recentlyPlayed[s.recentlyPlayedIndex] = songid

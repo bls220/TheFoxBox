@@ -5,6 +5,7 @@ import (
 	"../dt"
 	"database/sql"
 	"strconv"
+	"errors"
 )
 
 const MOOD_RANGE int = 10;
@@ -50,6 +51,17 @@ func GetSongsByMood(mood dt.Mood, count int) ([]dt.Song, error) {
 										mood.R-MOOD_RANGE,mood.R+MOOD_RANGE,
 										mood.G-MOOD_RANGE,mood.G+MOOD_RANGE,
 										mood.B-MOOD_RANGE,mood.B+MOOD_RANGE, count)
+}
+
+func GetSong(id int) (dt.Song, error) {
+	r, err := getSongsGeneric("SELECT * FROM song WHERE id=?", id)
+	if err != nil {
+		return dt.Song{}, nil
+	}
+	if len(r) != 1 {
+		return dt.Song{},errors.New("Wrong number of songs found for single id!")
+	}
+	return r[0], nil
 }
 
 func GetSongsByRoom(room dt.Room, count int) ([]dt.Song, error) {
