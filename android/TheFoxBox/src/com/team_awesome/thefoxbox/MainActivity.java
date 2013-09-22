@@ -1,6 +1,10 @@
 package com.team_awesome.thefoxbox;
 
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.json.JSONException;
 
 import android.app.ActionBar;
 import android.app.SearchManager;
@@ -11,18 +15,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.SearchView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
@@ -42,6 +38,9 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
+
+	private HomeFragment mHomeFrag;
+	private UpcomingFragment mUpcomingFrag;
 
 	@Override
 	protected void onNewIntent(Intent intent) {
@@ -70,8 +69,14 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
 
-		// Set up action bar
-		ActionBar bar = getActionBar();
+		Log.w(MainActivity.TAG, "Testing shiz");
+		CommThread thread = new CommThread();
+		try {
+			thread.login(this, "Ben");
+			thread.start();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 
 	}
 
@@ -107,10 +112,12 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 			Fragment fragment = null;
 			switch (position) {
 			case 0: // Now Playing
-				fragment = new HomeFragment();
+				mHomeFrag = new HomeFragment();
+				fragment = mHomeFrag;
 				break;
 			case 1: // Upcoming
-				fragment = new UpcomingFragment();
+				mUpcomingFrag = new UpcomingFragment();
+				fragment = mUpcomingFrag;
 				break;
 			default:
 				Log.e(TAG, "Fragment created out of bounds.");
@@ -141,24 +148,47 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	@Override
 	public void loginCallback(String authToken) {
-		// DO Nothing
+		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
+		updateUI();
 	}
 
 	@Override
 	public void queueCallback(SongItem[] data) {
-		// DO Nothing
+		// Forward to fragment
+		if (mHomeFrag != null)
+			mHomeFrag.queueCallback(data);
+
+		if (mUpcomingFrag != null)
+			mUpcomingFrag.queueCallback(data);
+
 	}
 
 	@Override
 	public void searchCallback(SongItem[] results) {
 		// TODO: look at results
 		for (SongItem song : results) {
-			Log.d(MainActivity.TAG,String.format("Artist: %s", song.getArtist()));
+			Log.d(MainActivity.TAG,
+					String.format("Artist: %s", song.getArtist()));
 		}
 	}
 
 	@Override
 	public void submitCallback(String error) {
 		// Do Nothing
+	}
+
+	public void updateUI() {
+		Log.d(TAG, "loop");
+		CommThread comm = new CommThread();
+		comm.getQueue(this);
+		comm.start();
+
+		// Run in future
+		new Timer().schedule(new TimerTask() {
+			@Override
+			public void run() {
+				updateUI();
+			}
+		}, 5000);
 	}
 }

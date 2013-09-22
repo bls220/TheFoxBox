@@ -3,6 +3,7 @@
  */
 package com.team_awesome.thefoxbox;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -14,7 +15,7 @@ import android.widget.ListView;
  * @author bsmith
  * 
  */
-public class UpcomingFragment extends Fragment implements QueryCallbacks{
+public class UpcomingFragment extends Fragment implements QueryCallbacks {
 
 	private ListView mQueueList;
 	private ListView mSuggestionList;
@@ -55,16 +56,25 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks{
 
 	@Override
 	public void queueCallback(SongItem[] data) {
-		// Update queue list
-		SongAdapter adapter = (SongAdapter) mQueueList.getAdapter();
-		adapter.clear();
-		for( SongItem song : data) {
-			adapter.add(song);
-		}
-		if( adapter.getCount() > 0 ){
-			//Remove now playing
-			adapter.remove(adapter.getItem(0));
-		}
+		final SongItem[] data2 = data.clone();
+		Activity act = getActivity();
+		if (act == null)
+			return;
+		act.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				// Update queue list
+				SongAdapter adapter = (SongAdapter) mQueueList.getAdapter();
+				adapter.clear();
+				for (SongItem song : data2) {
+					adapter.add(song);
+				}
+				if (adapter.getCount() > 0) {
+					// Remove now playing
+					adapter.remove(adapter.getItem(0));
+				}
+			}
+		});
 	}
 
 	@Override
@@ -75,7 +85,7 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks{
 	@Override
 	public void submitCallback(String error) {
 		// TODO Check for errors
-		
+
 	}
 
 }

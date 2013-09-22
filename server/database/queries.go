@@ -67,7 +67,7 @@ func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
 		idStr += `,"` + strconv.Itoa(id) + `"`
 	}
 	
-	sql = `select avg(r) as avgr, avg(g) as avgg, avg(b) as avgb, song
+	sql := `select avg(r) as avgr, avg(g) as avgg, avg(b) as avgb, song
 				from vote where user IN (` + idStr + `) AND like="1" AND GROUP BY song HAVING ` +
 				fmt.Sprintf("avgr BETWEEN %d AND %d AND avgg BETWEEN %d AND %d AND avgb BETWEEN %d AND %d",
 										avgMood.R-MOOD_RANGE,avgMood.R+MOOD_RANGE,
@@ -77,7 +77,7 @@ func GetSongsByRoom(room dt.Room) ([]dt.Song, error) {
 }
 
 func GetSongs() ([]dt.Song, error) {
-	return getSongsGeneric("SELECT id, title FROM song")
+	return getSongsGeneric("SELECT * FROM song")
 }
 
 func GetSongsByChaos(num int) ([]dt.Song, error) {
@@ -103,6 +103,49 @@ func getSongsGeneric(query string) ([]dt.Song, error){
 	return songs, nil
 }
 
+func getVotesGeneric(query string) ([]dt.Vote, error){
+
+	votes := []dt.Vote{}
+	f := func(db *sql.DB) error {
+		rows, err := db.Query(query)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		votes = convVotes(rows)
+		return nil
+	}
+	if err := doTransaction(f); err != nil {
+		return nil, err
+	}
+	return votes, nil
+}
+
+
+
+func GetSongLove(user dt.User, song dt.Song) (int, error){
+	like :=0;
+	songs, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
+	for i := range songs {
+		if songs[i].Like {
+			like++
+		} else{
+			like--
+		}
+	}
+	if like>5 {
+		like=5
+	}else if like<0{
+		like=0
+	}
+	return like, err
+}
+
+func GetCrowdFavs(num int) {
+
+}
+
+
 func convSongs(rows *sql.Rows) []dt.Song {
 	songs := []dt.Song{}
 	for rows.Next() {
@@ -111,6 +154,18 @@ func convSongs(rows *sql.Rows) []dt.Song {
 		songs = append(songs,song)
 	}
 	return songs
+}
+
+func convVotes(rows *sql.Rows) []dt.Vote {
+	votes := []dt.Vote{}
+	for rows.Next() {
+		vote := dt.Vote{}
+		var r , g, b int
+		rows.Scan(&vote.Id,&vote.Song,&vote.User,&vote.Like,&r,&g,&b)
+		vote.Mood = dt.Mood{R: r, G: g, B: b}
+		votes = append(votes,vote)
+	}
+	return votes
 }
 
 type DBCallback func(*sql.DB) error
