@@ -4,13 +4,8 @@ import (
 	"./dt"
 	"sync"
 	"container/heap"
+	"sort"
 )
-
-// Ideas:
-//		no less than 5 songs in the queue at once.
-//		When less songs are in the queue, the program guesses what songs could be played until there are 5 in the queue
-//			Songs added in this way will have their 'points' set according to how likely it thinks people will like the
-//				song.
 
 type B struct{}
 
@@ -44,7 +39,7 @@ func (s*SongQueue) Pop() interface{} {
 var theDJ = DJ{}
 type DJ struct {
 	// Must be used to guard all methods
-	m sync.Mutex
+	sync.Mutex
 	songs SongQueue
 	
 	// Contains the song ID if the song was 'recently' played
@@ -53,9 +48,46 @@ type DJ struct {
 	recentlyPlayedIndex int
 }
 
+func (s*DJ) GetQueue() []dt.Song {
+	s.Lock()
+	defer s.Unlock()
+	
+	cpy := make([]SongPoint, len(s.songs.songs))
+	copy(s.songs.songs, cpy)
+	ss := SongQueue{cpy}
+	sort.Sort(&ss)
+	
+	ret := make([]dt.Song, len(ss.songs))
+	for i, v := range ss.songs {
+		ret[i] = v.s
+	}
+	
+	return ret
+}
+
+func (s*DJ) GetNextSong() (dt.Song, error) {
+	s.Lock()
+	needSongs := 6 - s.songs.Len()
+
+	if needSongs > 0 {
+		s.Unlock() // Don't block during this (db could block)
+		newSongs, err := SuggestSongs(needSongs)
+		if err == nil {
+			s.Lock()
+			for _,x := range newSongs {
+				heap.Push(&s.songs, x)
+			}
+		} else if s.songs.Len() == 0 {
+			return dt.Song{}, err
+		}
+	}
+	defer s.Unlock()
+	return heap.Pop(&s.songs).(dt.Song), nil
+}
+
 func (s*DJ) Vote(songid, points int) string {
-	s.m.Lock()
-	defer s.m.Unlock()
+	s.Lock()
+	defer s.Unlock()
 	indx := -1
 	// Linear search through this short list won't be too bad
 	for i,x := range s.songs.songs {
@@ -76,8 +108,8 @@ func (s*DJ) Vote(songid, points int) string {
 }
 
 func (s*DJ) AddSong(songid, points int) string {
-	s.m.Lock()
-	defer s.m.Unlock()
+	s.Lock()
+	defer s.Unlock()
 	
 	if _, ok := s.recent[songid]; ok {
 		return "Sorry, this song has been played too recently!"
@@ -99,7 +131,12 @@ func (s*DJ) AddSong(songid, points int) string {
 	s.recentlyPlayedIndex = (s.recentlyPlayedIndex + 1) % len(s.recentlyPlayed)
 	
 	// Remove the song from recent memory so that it can be played again
-	delete(s.recent, prev)
+	
+	// (TODO: prevent ids from ever being 0 so we can just check for that rather than
+	//    going though the map check)
+	if _, ok := s.recent[prev]; ok {
+		delete(s.recent, prev)
+	}
 	
 	return "" // Blank for no error
 }

@@ -35,7 +35,7 @@ func AddSongs(songs []dt.Song) error {
 
 func AddVote(vote dt.Vote) error {
 	f := func(db *sql.DB) error {
-		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.Song.Id,vote.User.Id,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
+		_, err := db.Exec(fmt.Sprintf("INSERT into vote(song,user,like,r,g,b) values('%d','%d','%d','%d','%d','%d')",vote.SongId,vote.UserId,vote.Like,vote.Mood.R,vote.Mood.G,vote.Mood.B));
 		return err
 	}
 	return doTransaction(f)
@@ -125,9 +125,9 @@ func getVotesGeneric(query string) ([]dt.Vote, error){
 
 func GetSongLove(user dt.User, song dt.Song) (int, error){
 	like :=0;
-	songs, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
-	for i := range songs {
-		if songs[i].Like {
+	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * FROM vote WHERE user IS %d AND song IS %d",user.Id,song.Id))
+	for i := range votes {
+		if votes[i].Like {
 			like++
 		} else{
 			like--
@@ -141,10 +141,31 @@ func GetSongLove(user dt.User, song dt.Song) (int, error){
 	return like, err
 }
 
-func GetCrowdFavs(num int) {
+func GetBestFavs(num int) ([]dt.Song, error) {
+	
+	votes, err := getVotesGeneric(fmt.Sprintf("SELECT * SUM(like) FROM vote GROUP BY song LIMIT %d", num))
+	if err != nil{
+		return nil, err
+	}
+
+	return GetSongsFromVotes(votes)
 
 }
 
+func GetSongsFromVotes(votes []dt.Vote) ([]dt.Song, error){
+	if len(votes) == 0 {
+		return []dt.Song{}, nil
+	}
+	
+	idStr := `"` + strconv.Itoa(votes[0].SongId) + `"`
+	for i := range votes {
+		idStr += `,"` + strconv.Itoa(votes[i].SongId) + `"`
+	}
+
+	sql := `SELECT * FROM song WHERE id IN (` + idStr + `)`
+
+	return getSongsGeneric(sql)
+}
 
 func convSongs(rows *sql.Rows) []dt.Song {
 	songs := []dt.Song{}
@@ -161,7 +182,7 @@ func convVotes(rows *sql.Rows) []dt.Vote {
 	for rows.Next() {
 		vote := dt.Vote{}
 		var r , g, b int
-		rows.Scan(&vote.Id,&vote.Song,&vote.User,&vote.Like,&r,&g,&b)
+		rows.Scan(&vote.Id,&vote.SongId,&vote.UserId,&vote.Like,&r,&g,&b)
 		vote.Mood = dt.Mood{R: r, G: g, B: b}
 		votes = append(votes,vote)
 	}

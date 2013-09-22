@@ -8,6 +8,7 @@ import (
 	
 	"./dt"
 	"./klog"
+	"./database"
 	
 	"sync"
 	"errors"
@@ -103,7 +104,7 @@ func GotConn(conn net.Conn) error {
 		case "moodchange":
 			return procMoodChange(req)
 		case "songlist":
-			return procSongList("songlist", req)
+			return procSongList(req)
 		case "search":
 			return procSearch(req)
 		case "login":
@@ -189,6 +190,12 @@ func logInUser(req*AndroidRequest) error {
 	return req.Respond(ret)
 }
 
+func procSongList(req*AndroidRequest) error {
+	if req.getUser() == nil { return TokenNotFound }
+	
+	return sendSongList("search", theDJ.GetQueue(), req)
+}
+
 func procMoodChange(req*AndroidRequest) error {
 	if req.require("Mood") { return KeysNotFound }
 	u := req.getUser()
@@ -240,7 +247,7 @@ func procVote(req*AndroidRequest) error {
 		if votes < 0 {
 			liked = false
 		}
-		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: liked,})
+		database.AddVote(dt.Vote{Mood: u.CurMood, SongId: id, UserId: u.Id, Like: liked,})
 	}
 	return nil
 }
@@ -254,7 +261,7 @@ func procSubmit(req*AndroidRequest) error {
 		return err
 	} else {
 		// Requesting a song counts as a vote
-		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: true,})
+		database.AddVote(dt.Vote{Mood: u.CurMood, SongId: id, UserId: u.Id, Like: true,})
 		// TODO: AI: Calculate predicted initial points of the song.
 		err := theDJ.AddSong(id, 0)
 		ret := struct {
