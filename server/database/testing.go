@@ -20,5 +20,5 @@ func Test() {
 	AddUser(dt.User{Name: "Travis",Admin: true})
 	AddVote(dt.Vote{SongId: 1, UserId: 1, Like: true, Mood: dt.Mood{10,10,10}})
 	AddVote(dt.Vote{SongId: 2, UserId: 1, Like: true, Mood: dt.Mood{50,50,50}})
-	fmt.Println(GetSongsByMood(dt.Mood{50,50,50}))
+	fmt.Println(GetSongsByMood(dt.Mood{50,50,50}, 10))
 }

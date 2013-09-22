@@ -7,6 +7,8 @@ import (
 	"sort"
 )
 
+//TODO: AI: When a song is suggested, give some weight to the decision based on how much it thinks the song will be liked.
+
 type B struct{}
 
 type SongPoint struct {
@@ -48,12 +50,16 @@ type DJ struct {
 	recentlyPlayedIndex int
 }
 
-func (s*DJ) GetQueue() []dt.Song {
+func (s*DJ) GetQueue() ([]dt.Song, error) {
+	if err := s.prime(); err != nil {
+		return nil, err
+	}
+	
 	s.Lock()
 	defer s.Unlock()
 	
 	cpy := make([]SongPoint, len(s.songs.songs))
-	copy(s.songs.songs, cpy)
+	copy(cpy, s.songs.songs)
 	ss := SongQueue{cpy}
 	sort.Sort(&ss)
 	
@@ -62,25 +68,35 @@ func (s*DJ) GetQueue() []dt.Song {
 		ret[i] = v.s
 	}
 	
-	return ret
+	return ret, nil
 }
 
-func (s*DJ) GetNextSong() (dt.Song, error) {
+func (s*DJ) prime() error {
 	s.Lock()
 	needSongs := 6 - s.songs.Len()
+	s.Unlock() // Don't block during this (db could block)
 
 	if needSongs > 0 {
-		s.Unlock() // Don't block during this (db could block)
 		newSongs, err := SuggestSongs(needSongs)
 		if err == nil {
 			s.Lock()
 			for _,x := range newSongs {
-				heap.Push(&s.songs, x)
+				heap.Push(&s.songs, SongPoint{x, 0})
 			}
+			s.Unlock()
 		} else if s.songs.Len() == 0 {
-			return dt.Song{}, err
+			return err //Ignore the error until we're out of songs
 		}
 	}
+	
+	return nil
+}
+
+func (s*DJ) GetNextSong() (dt.Song, error) {
+	if err := s.prime(); err != nil {
+		return dt.Song{}, nil
+	}
+	s.Lock()
 	defer s.Unlock()
 	return heap.Pop(&s.songs).(dt.Song), nil
 }
