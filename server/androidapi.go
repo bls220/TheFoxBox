@@ -57,20 +57,16 @@ func (req*AndroidRequest) require(keys...string) bool {
 	return false
 }
 
-func procSongList(req string, conn*AndroidRequest) error {
-	dummyData := struct {
+func sendSongList(req string, songs[]dt.Song, conn*AndroidRequest) error {
+	data := struct {
 		Request string
 		Songs []dt.Song
 	} {
 		req,
-		[]dt.Song{
-			dt.Song{ 0, "Kevin and the Malachowskis", "Bob", "Kevin's Song"},
-			dt.Song{ 1, "Bob and the Joes", "Kevin", "Bob's Song"},
-			dt.Song{ 2, "Jesse and the girls", "Untitled", "Jesse's girl"},
-		},
+		songs,
 	}
 	
-	return conn.Respond(dummyData)
+	return conn.Respond(data)
 }
 
 func GotConn(conn net.Conn) error {
@@ -116,32 +112,58 @@ func GotConn(conn net.Conn) error {
 	return errors.New(fmt.Sprint("Unknown request:", req))
 }
 
+type Room struct {
+	sync.Mutex
+	m map[string]*dt.User
+	nextAuthToke uint64
+}
 
-/*
-   This map is shared among multiple goroutines and therefore must be guarded by a mutex.
-	It maps an AuthToken to the corresponding User
-*/
-var loggedInUsers map[string]*dt.User = make(map[string]*dt.User)
-var loggedInUsersMutex sync.Mutex
-// Also guarded by loggedInUsersMutex
-var nextAuthToke uint64
+func (ro Room) GetUserIdsInRoom() []int {
+	ret := make([]int, len(ro.m))
+	i := 0
+	for _, v := range ro.m {
+		ret[i] = v.Id
+		i++
+	}
+	return ret
+}
+
+func (ro Room) AverageMood() dt.Mood {
+	ro.Lock()
+	defer ro.Unlock()
+	
+	r, g, b := 0.0, 0.0, 0.0
+	for _, v := range ro.m {
+		m := v.CurMood
+		r += float64(m.R)
+		g += float64(m.G)
+		b += float64(m.B)
+	}
+	
+	l := float64(len(ro.m))
+	return dt.Mood{int(r/l), int(g/l), int(b/l)}
+}
+
+var loggedInUsers = Room {
+	m: make(map[string]*dt.User),
+}
 
 func (req*AndroidRequest) getUser() *dt.User {
-	loggedInUsersMutex.Lock()
-	defer loggedInUsersMutex.Unlock()
-	if u, ok := loggedInUsers[req.AuthToken]; ok {
+	loggedInUsers.Lock()
+	defer loggedInUsers.Unlock()
+	if u, ok := loggedInUsers.m[req.AuthToken]; ok {
 		return u
 	}
 	return nil
 }
 // Returns the AuthToken for the user
 func logUserIn(u*dt.User) string {
-	loggedInUsersMutex.Lock()
-	toke := nextAuthToke
-	nextAuthToke++
+	loggedInUsers.Lock()
+	toke := loggedInUsers.nextAuthToke
+	loggedInUsers.nextAuthToke++
 	auth := fmt.Sprintf("%08X", toke)
-	loggedInUsers[auth] = u
-	loggedInUsersMutex.Unlock()
+	loggedInUsers.m[auth] = u
+	loggedInUsers.Unlock()
 	
 	return auth
 }
@@ -195,8 +217,12 @@ func procSearch(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 
-	//TODO: DB: search for this
-	return procSongList("search", req)
+	ret, err := database.GetSongsByString(req.Params["Term"])
+	if err != nil {
+		return nil
+	}
+	
+	return sendSongList("search", ret, req)
 }
 
 func procVote(req*AndroidRequest) error {
@@ -204,13 +230,17 @@ func procVote(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 	
-	//TODO: DB: Add this vote to the DB
 	if id, err := strconv.Atoi(req.Params["Id"]); err != nil {
 		return err
 	} else if votes, err := strconv.Atoi(req.Params["Amt"]); err != nil {
 		return err
 	} else {
 		theDJ.Vote(id, votes)
+		liked := true
+		if votes < 0 {
+			liked = false
+		}
+		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: liked,})
 	}
 	return nil
 }
@@ -220,10 +250,11 @@ func procSubmit(req*AndroidRequest) error {
 	u := req.getUser()
 	if u == nil { return TokenNotFound }
 	
-	//TODO: DB: Add this submission as a pseudo-vote to the DB
 	if id, err := strconv.Atoi(req.Params["Id"]); err != nil {
 		return err
 	} else {
+		// Requesting a song counts as a vote
+		database.AddVote(dt.Vote{Mood: u.curMood, SongId: id, UserId: u.Id, Like: true,})
 		// TODO: AI: Calculate predicted initial points of the song.
 		err := theDJ.AddSong(id, 0)
 		ret := struct {

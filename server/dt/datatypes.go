@@ -18,23 +18,13 @@ type User struct {
 	Id int
 	Name string
 	CurMood Mood
+	Admin bool
 }
 
-// Represents a set of users in a room
-type Room struct {
-	InRoom map[string]*User
-}
-func (ro Room) AverageMood() Mood {
-	r, g, b := 0.0, 0.0, 0.0
-	for _, v := range ro.InRoom {
-		m := v.CurMood
-		r += float64(m.R)
-		g += float64(m.G)
-		b += float64(m.B)
-	}
-	
-	l := float64(len(ro.InRoom))
-	return Mood{int(r/l), int(g/l), int(b/l)}
+// Decoupling is important sometimes!
+type Room interface {
+	GetUserIdsInRoom() []int
+	AverageMood() Mood
 }
 
 type Song struct {
@@ -45,7 +35,7 @@ type Song struct {
 type Vote struct {
 	Id int
 	Mood Mood
-	Song Song
-	User User
+	SongId int
+	UserId int
 	Like bool
 }
