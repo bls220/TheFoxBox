@@ -18,9 +18,15 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -45,8 +51,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	private HomeFragment mHomeFrag;
 	private UpcomingFragment mUpcomingFrag;
-
-	private ProgressDialog loadingDialog;
+	private SearchFragment mSearchFrag;
 
 	@Override
 	protected void onNewIntent(Intent intent) {
@@ -74,28 +79,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
-
-		Log.w(MainActivity.TAG, "Testing shiz");
-		CommThread thread = new CommThread();
-		try {
-			thread.login(this, "Ben");
-			thread.start();
-
-			loadingDialog = new ProgressDialog(this);
-			loadingDialog.setTitle("Please Wait...");
-			loadingDialog.setIndeterminate(true);
-			loadingDialog.setOnCancelListener(new OnCancelListener() {
-				@Override
-				public void onCancel(DialogInterface dialog) {
-					finish();
-				}
-			});
-			loadingDialog.show();
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-
+		updateUI();
 	}
 
 	@Override
@@ -137,6 +121,10 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 				mUpcomingFrag = new UpcomingFragment();
 				fragment = mUpcomingFrag;
 				break;
+			case 2:
+				mSearchFrag = new SearchFragment();
+				fragment = mSearchFrag;
+				break;
 			default:
 				Log.e(TAG, "Fragment created out of bounds.");
 				throw new IndexOutOfBoundsException("Page Viewer doesn't hold "
@@ -148,7 +136,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		@Override
 		public int getCount() {
 			// Show 2 total pages.
-			return 2;
+			return 3;
 		}
 
 		@Override
@@ -166,9 +154,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 	@Override
 	public void loginCallback(String authToken) {
-		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
-		loadingDialog.dismiss();
-		updateUI();
 	}
 
 	@Override
@@ -185,17 +170,16 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 	@Override
 	public void searchCallback(SongItem[] results) {
 		// TODO: look at results
-		for (SongItem song : results) {
-			Log.d(MainActivity.TAG,
-					String.format("Artist: %s", song.getArtist()));
-		}
+		mSearchFrag.doSearch(results);
 	}
 
 	public void updateUI() {
 		Log.d(TAG, "loop");
-		CommThread comm = new CommThread();
-		comm.getQueue(this);
-		comm.start();
+		if (HomeFragment.loggedIn == true) {
+			CommThread comm = new CommThread();
+			comm.getQueue(this);
+			comm.start();
+		}
 
 		// Run in future
 		new Timer().schedule(new TimerTask() {

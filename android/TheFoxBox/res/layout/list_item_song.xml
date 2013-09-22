@@ -2,6 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:focusable="true"
+    android:longClickable="true"
     android:paddingBottom="5dp"
     android:paddingTop="5dp" >
 
@@ -29,6 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/songVoteGroup"
         android:layout_marginLeft="11dp"
+        android:layout_toLeftOf="@+id/btnSubmit"
         android:layout_toRightOf="@+id/imageViewAlbumArt"
         android:text="Large Text"
         android:textAppearance="?android:attr/textAppearanceLarge" />
@@ -39,8 +42,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_marginRight="12dp"
-        android:layout_toRightOf="@+id/textViewSongArtist" >
+        android:layout_marginRight="12dp" >
 
         <RadioButton
             android:id="@+id/radioUp"
@@ -56,5 +58,15 @@
             android:layout_gravity="bottom|right"
             android:checked="false" />
     </RadioGroup>
+
+    <Button
+        android:id="@+id/btnSubmit"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/songVoteGroup"
+        android:layout_toLeftOf="@+id/songVoteGroup"
+        android:text="Add"
+        android:visibility="gone" />
 
 </RelativeLayout>

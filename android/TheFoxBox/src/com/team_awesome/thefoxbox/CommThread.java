@@ -137,9 +137,13 @@ public class CommThread extends Thread {
 				JSONObject jsonIn = new JSONObject(new String(buf));
 				// Handle response
 				handleResponse(jsonIn);
-			} catch (Exception e) {
+			} catch (IOException e) {
 				// retry
+				e.printStackTrace();
 				break;
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			retry = false;
 		}
