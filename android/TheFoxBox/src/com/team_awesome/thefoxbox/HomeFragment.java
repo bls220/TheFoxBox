@@ -3,11 +3,9 @@
  */
 package com.team_awesome.thefoxbox;
 
-import org.json.JSONException;
-
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,34 +31,33 @@ public class HomeFragment extends Fragment implements QueryCallbacks {
 		View rootView = inflater.inflate(R.layout.fragment_nowplaying,
 				container, false);
 
-		adapterNowPlaying = new SongAdapter(getActivity(),
-				new SongItem[] { new SongItem() });
+		adapterNowPlaying = new SongAdapter(getActivity());
 		((ListView) rootView.findViewById(R.id.listViewNowPlaying))
 				.setAdapter(adapterNowPlaying);
-
-		Log.w(MainActivity.TAG, "Testing shiz");
-		CommThread thread = new CommThread();
-		try {
-			thread.login(this, "Ben");
-			thread.start();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
 
 		return rootView;
 	}
 
 	@Override
 	public void loginCallback(String authToken) {
-		Log.d(MainActivity.TAG, "AuthCode: " + authToken);
 	}
 
 	@Override
 	public void queueCallback(SongItem[] data) {
-		// Update now playing
-		adapterNowPlaying.clear();
-		if (data.length > 0)
-			adapterNowPlaying.add(data[0]);
+		final SongItem[] data2 = data.clone();
+		Activity act = getActivity();
+		if (act == null)
+			return;
+		act.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				// Update now playing
+				adapterNowPlaying.clear();
+				 if (data2.length > 0)
+				 adapterNowPlaying.add(data2[0]);
+			}
+		});
+
 	}
 
 	@Override
