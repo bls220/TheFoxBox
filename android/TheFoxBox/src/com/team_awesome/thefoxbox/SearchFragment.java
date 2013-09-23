@@ -3,6 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
+import com.team_awesome.thefoxbox.SongItem.EVote;
+
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
@@ -32,26 +34,23 @@ public class SearchFragment extends Activity implements QueryCallbacks {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.fragment_search);
-
+		
 		// Get List views
 		mSearchList = (ListView) findViewById(R.id.listViewSearch);
 		
 		mSearchAdapter = new SongAdapter(this);
 		mSearchList.setAdapter(mSearchAdapter);
 		mSearchList.setOnItemLongClickListener(mSearchAdapter);
-	}
-	
-	@Override
-	protected void onNewIntent(Intent intent) {
-		setIntent(intent);
+		
 		// Get the intent, verify the action and get the query
-		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-			String query = intent.getStringExtra(SearchManager.QUERY);
+		doSearch(new SongItem[]{new SongItem("","No Results","",-1,EVote.NONE)});
+		if (Intent.ACTION_SEARCH.equals(getIntent().getAction())) {
+			String query = getIntent().getStringExtra(SearchManager.QUERY);
 			CommThread comms = new CommThread();
 			comms.search(this, query);
 			comms.start();
 		}
-
+		
 	}
 	
 	public void doSearch(final SongItem[] songs){
@@ -82,8 +81,7 @@ public class SearchFragment extends Activity implements QueryCallbacks {
 
 	@Override
 	public void searchCallback(SongItem[] results) {
-		// TODO Auto-generated method stub
-		
+		doSearch(results);
 	}
 }
 

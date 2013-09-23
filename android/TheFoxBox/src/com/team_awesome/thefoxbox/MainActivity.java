@@ -83,18 +83,6 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 
 		return true;
 	}
-	
-	@Override
-	protected void onNewIntent(Intent intent) {
-		setIntent(intent);
-		// Get the intent, verify the action and get the query
-		if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-			intent.setClassName(getBaseContext(), "com.team_awesome.thefoxbox.SearchFragment");
-			intent.putExtra(SearchManager.QUERY, intent.getStringExtra(SearchManager.QUERY));
-			startActivity(intent);
-		}
-
-	}
 
 	/**
 	 * A {@link FragmentPagerAdapter} that returns a fragment corresponding to

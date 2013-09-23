@@ -54,16 +54,34 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 					.findViewById(R.id.textViewSongArtist);
 			holder.voteGroup = (RadioGroup) row
 					.findViewById(R.id.songVoteGroup);
+			holder.voteUp = (RadioButton) row.findViewById(R.id.radioUp);
+			holder.voteDown = (RadioButton) row.findViewById(R.id.radioDown);
 
 			row.setTag(holder);
 		} else {
 			holder = (SongHolder) row.getTag();
 		}
+		
+		holder.voteGroup.setOnCheckedChangeListener(null); //Don't report changes during setup
 
 		final SongItem song = getItem(position);
 		holder.txtTitle.setText(song.getTitle());
 		holder.txtArtist.setText(song.getArtist());
 		// TODO: holder.imgArt.setImageURI(uri);
+		switch(song.getVote()){
+		case DOWN:
+			holder.voteDown.setChecked(true);
+			break;
+		case NONE:
+			holder.voteGroup.clearCheck();
+			break;
+		case UP:
+			holder.voteUp.setChecked(true);
+			break;
+		default:
+			break;
+		
+		}
 
 		// Set click listeners
 		holder.voteGroup
@@ -103,6 +121,8 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 		TextView txtTitle;
 		TextView txtArtist;
 		RadioGroup voteGroup;
+		RadioButton voteUp;
+		RadioButton voteDown;
 		// TextView txtAlbum;
 	}
 
