@@ -39,7 +39,7 @@ func makeWalkFunc(prefix string, sl*slHolder) filepath.WalkFunc {
 			return nil
 		}
 		
-		path = path[len(prefix)+1:]
+		path = path[len(prefix):]
 		
 		// Platform independence
 		path = strings.Replace(path, "\\", "/", -1)

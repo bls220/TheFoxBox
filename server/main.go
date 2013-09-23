@@ -23,6 +23,13 @@ func initFirstTime() {
 }
 
 func toPath(s dt.Song) string {
+	fmt.Println("-----------------------------------------")
+	fmt.Println(s)
+	fmt.Println(s.Artist)
+	fmt.Println(s.Album)
+	fmt.Println(s.Title)
+	fmt.Println("-----------------------------------------")
+	
 	return PREFIX + s.Artist + "/" + s.Album + "/" + s.Title
 }
 

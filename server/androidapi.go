@@ -14,6 +14,8 @@ import (
 	"errors"
 	"strings"
 	"strconv"
+	
+	"math/rand"
 )
 
 var AAM = klog.Module("Android API")
@@ -177,8 +179,9 @@ var InvalidFormat = errors.New("The request had a bad format for at least one of
 func logInUser(req*AndroidRequest) error {
 	if req.require("Name") { return KeysNotFound }
 	
+	rMood := dt.Mood{int(rand.Int31n(255)),int(rand.Int31n(255)),int(rand.Int31n(255)),}
 	//TODO: DB: Hook into the DB here to get the User
-	u := &dt.User{Name: req.Params["Name"],}
+	u := &dt.User{Name: req.Params["Name"],CurMood:rMood}
 	ret := struct {
 		Request string
 		AuthToken string
