@@ -1,0 +1,61 @@
+
+
+//
+func try(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TryIt(ssql string) {
+	DestroyDB()
+	CreateUserTable()
+	CreateSongTable()
+	CreateVoteTable()
+	try(AddSongs([]dt.Song{dt.Song{Title: "What the frog says"}, 
+				dt.Song{Title: "What the fox says"},
+				dt.Song{Title: "What the dog says"},
+				dt.Song{Title: "What the cat says"}}))
+	
+	s1 := dt.Song{Id: 1}
+	s2 := dt.Song{Id: 2}
+	u1 := dt.User{Id: 1}
+	u2 := dt.User{Id: 2}
+	u3 := dt.User{Id: 3}
+	
+	for _,x := range []dt.Vote{
+		dt.Vote{Mood:dt.Mood{50, 50, 50}, Like: true, Song:s1, User:u1},
+		dt.Vote{Mood:dt.Mood{100, 50, 50}, Like: true, Song:s1, User:u2},
+		dt.Vote{Mood:dt.Mood{150, 50, 50}, Like: true, Song:s1, User:u3},
+		dt.Vote{Mood:dt.Mood{20, 50, 50}, Like: true, Song:s2, User:u1},
+	} {
+		try(AddVote(x))
+	}
+	
+	f := func(db *sql.DB) error {
+		rows, err := db.Query(ssql)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		
+		cols, err := rows.Columns(); try(err)
+		fmt.Println(cols)
+		
+		things := make([]interface{}, len(cols))
+		for i := range things {
+			var st string
+			things[i] = &st
+		}
+		for rows.Next() {
+			rows.Scan(things...)
+			for _, x:=range things{
+				st := x.(*string)
+				fmt.Print(*st, " || ")
+			}
+			fmt.Println()
+		}
+		return nil
+	}
+	try(doTransaction(f))
+}
