@@ -4,9 +4,11 @@
 package com.team_awesome.thefoxbox;
 
 import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.provider.SongListCursor;
 
 import android.app.Activity;
 import android.content.Context;
+import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -14,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -26,16 +29,16 @@ import android.widget.Toast;
  * @author bsmith
  * 
  */
-public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongClickListener {
-
-	Context context;
+public class SongAdapter extends BaseAdapter implements OnItemLongClickListener {
+	protected final Context context;
 	static final int layoutResourceId = R.layout.list_item_song;
 
 	public SongAdapter(Context context) {
-		super(context, layoutResourceId);
 		this.context = context;
 	}
 
+	private Cursor cur;
+	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View row = convertView;
@@ -64,7 +67,8 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 		
 		holder.voteGroup.setOnCheckedChangeListener(null); //Don't report changes during setup
 
-		final SongItem song = getItem(position);
+		
+		final SongItem song = (SongItem) getItem(position);
 		holder.txtTitle.setText(song.getTitle());
 		holder.txtArtist.setText(song.getArtist());
 		// TODO: holder.imgArt.setImageURI(uri);
@@ -107,7 +111,7 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 				CommThread comm = new CommThread();
 				comm.submit(song.getID());
 				comm.start();
-				Toast.makeText(getContext(), String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
+				Toast.makeText(context, String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
 			}
 			
 		});
@@ -134,7 +138,40 @@ public class SongAdapter extends ArrayAdapter<SongItem> implements OnItemLongCli
 		CommThread comm = new CommThread();
 		comm.submit(song.getID());
 		comm.start();
-		Toast.makeText(getContext(), String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
+		Toast.makeText(context, String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
 		return true;
+	}
+
+	@Override
+	public int getCount() {
+		if (cur == null) {
+			return 0;
+		}
+		
+		return cur.getCount();
+	}
+
+	@Override
+	public Object getItem(int position) {
+		cur.move(position);
+		return new SongItem(cur.getString(SongListCursor.ALBUM_COL),
+				cur.getString(SongListCursor.ARTIST_COL), 
+				cur.getString(SongListCursor.TITLE_COL), 
+				cur.getInt(SongListCursor.ID_COL),
+				EVote.NONE);
+	}
+
+	@Override
+	public long getItemId(int position) {
+		return position;
+	}
+	
+	public void setCursor(Cursor c){
+		if (cur != null){
+			cur.close();
+		}
+		
+		cur = c;
+		notifyDataSetChanged();
 	}
 }
