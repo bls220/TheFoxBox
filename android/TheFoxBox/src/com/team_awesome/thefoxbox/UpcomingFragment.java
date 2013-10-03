@@ -3,22 +3,25 @@
  */
 package com.team_awesome.thefoxbox;
 
-import android.app.Activity;
+import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.provider.LoaderHelper;
+
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
+import android.widget.Toast;
 
 /**
  * @author bsmith
  * 
  */
-public class UpcomingFragment extends Fragment implements QueryCallbacks {
-
-	private ListView mQueueList;
-	private ListView mSuggestionList;
+public class UpcomingFragment extends Fragment implements SongAdapter.ActionCallback, OnItemLongClickListener, LoaderHelper.Callback<String> {
+	private SongAdapter queue, suggestions;
 
 	/**
 	 * 
@@ -33,49 +36,53 @@ public class UpcomingFragment extends Fragment implements QueryCallbacks {
 				false);
 
 		// Get List views
-		mQueueList = (ListView) rootView.findViewById(R.id.listViewQueue);
-		mSuggestionList = (ListView) rootView
-				.findViewById(R.id.listViewSuggestion);
+		ListView lq = (ListView) rootView.findViewById(R.id.listViewQueue);
+		queue = new SongAdapter(getActivity(), this, true);
+		lq.setAdapter(queue);
+		ListView sq = (ListView) rootView.findViewById(R.id.listViewSuggestion);
+		suggestions = new SongAdapter(getActivity(), this, false);
+		sq.setOnItemLongClickListener(this);
 		
-		SongAdapter queueAdapter = new SongAdapter(getActivity());
-		mQueueList.setAdapter(queueAdapter);
-		mQueueList.setOnItemLongClickListener(queueAdapter);
-		mSuggestionList.setAdapter(new SongAdapter(getActivity()));
-
 		return rootView;
 	}
 
-	@Override
-	public void loginCallback(String authToken) {
-		// Do NOthing
+	public void setUpcoming(SongItem[] data) {
+		queue.setData(data);
 	}
 
 	@Override
-	public void queueCallback(SongItem[] data) {
-		final SongItem[] data2 = data.clone();
-		Activity act = getActivity();
-		if (act == null)
-			return;
-		act.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				// Update queue list
-				SongAdapter adapter = (SongAdapter) mQueueList.getAdapter();
-				adapter.clear();
-				for (SongItem song : data2) {
-					adapter.add(song);
-				}
-				if (adapter.getCount() > 0) {
-					// Remove now playing
-					adapter.remove(adapter.getItem(0));
-				}
-			}
-		});
+	public void vote(SongItem song, EVote vote) {
+		LoaderHelper.vote(song.getID(), vote.value());
 	}
 
 	@Override
-	public void searchCallback(SongItem[] results) {
-		// Do Nothing
+	public boolean onItemLongClick(AdapterView<?> parent, View view,
+			int position, long id) {
+		SongItem song = suggestions.getItem(position);
+		LoaderHelper.submit(this, song.getID());
+		
+		return true;
 	}
 
+	@Override
+	public void done(String ret) {
+		if (ret == null) {
+			ret = "Song submitted!";
+		}
+		Toast.makeText(getActivity(), ret, Toast.LENGTH_LONG).show();
+	}
+
+	@Override
+	public void err(Exception ex) {
+		Toast.makeText(getActivity(), "Error submitting song: " + ex, Toast.LENGTH_LONG).show();
+	}
 }
+
+
+
+
+
+
+
+
+

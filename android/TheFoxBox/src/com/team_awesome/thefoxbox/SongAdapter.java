@@ -4,45 +4,57 @@
 package com.team_awesome.thefoxbox;
 
 import com.team_awesome.thefoxbox.SongItem.EVote;
-import com.team_awesome.thefoxbox.provider.SongListCursor;
 
 import android.app.Activity;
 import android.content.Context;
-import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * @author bsmith
  * 
  */
-public class SongAdapter extends BaseAdapter implements OnItemLongClickListener {
+public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener {
+	interface ActionCallback {
+		void vote(SongItem song, EVote vote);
+	}
+	
 	protected final Context context;
+	protected final ActionCallback callback;
+	protected final boolean voteable;
 	static final int layoutResourceId = R.layout.list_item_song;
 
-	public SongAdapter(Context context) {
+	/**
+	 * 
+	 * @param context
+	 * @param callback
+	 * @param voteable If true the list of songs will have voting buttons. When these buttons are
+	 *        clicked the {@link ActionCallback#vote(SongItem, EVote)} method is called. Else there will be no buttons nor
+	 *        callback.
+	 */
+	public SongAdapter(Context context, ActionCallback callback, boolean voteable) {
 		this.context = context;
+		this.callback = callback;
+		this.voteable = voteable;
+		
+		if (voteable && callback == null) {
+			throw new RuntimeException("If you listen for votes you must provide a callback!");
+		}
 	}
 
-	private Cursor cur;
+	private SongItem[] cur;
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View row = convertView;
-		SongHolder holder = null;
+		SongHolder holder;
 
 		if (row == null) {
 			LayoutInflater inflater = ((Activity) context).getLayoutInflater();
@@ -66,44 +78,38 @@ public class SongAdapter extends BaseAdapter implements OnItemLongClickListener 
 		}
 		
 		holder.voteGroup.setOnCheckedChangeListener(null); //Don't report changes during setup
-
 		
-		final SongItem song = (SongItem) getItem(position);
-		holder.txtTitle.setText(song.getTitle());
-		holder.txtArtist.setText(song.getArtist());
-		// TODO: holder.imgArt.setImageURI(uri);
-		switch(song.getVote()){
-		case DOWN:
-			holder.voteDown.setChecked(true);
-			break;
-		case NONE:
-			holder.voteGroup.clearCheck();
-			break;
-		case UP:
-			holder.voteUp.setChecked(true);
-			break;
-		default:
-			break;
-		
+		SongItem song = getItem(position);
+		if (voteable) {
+			// Set the tag so that the handler can figure out which one the user clicked on
+			holder.voteGroup.setTag(song);
+			
+			holder.txtTitle.setText(song.getTitle());
+			holder.txtArtist.setText(song.getArtist());
+			// TODO: holder.imgArt.setImageURI(uri);
+			switch(song.getVote()){
+			case DOWN:
+				holder.voteDown.setChecked(true);
+				break;
+			case NONE:
+				holder.voteGroup.clearCheck();
+				break;
+			case UP:
+				holder.voteUp.setChecked(true);
+				break;
+			default:
+				break;
+			
+			}
+	
+			// Set click listeners
+			holder.voteGroup.setOnCheckedChangeListener(this);
+			holder.voteGroup.setVisibility(View.VISIBLE);
+		} else {
+			holder.voteGroup.setVisibility(View.GONE);
 		}
-
-		// Set click listeners
-		holder.voteGroup
-				.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-					@Override
-					public void onCheckedChanged(RadioGroup group, int checkedId) {
-						int val = 0;
-						if( checkedId == R.id.radioUp ){
-							val += EVote.UP.value();
-						}else{
-							val += EVote.DOWN.value();
-						}
-						CommThread comm = new CommThread();
-						comm.vote(song.getID(), val);
-						comm.start();
-					}
-				});
 		
+		/*
 		row.findViewById(R.id.btnSubmit).setOnClickListener(new OnClickListener(){
 
 			@Override
@@ -114,7 +120,7 @@ public class SongAdapter extends BaseAdapter implements OnItemLongClickListener 
 				Toast.makeText(context, String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
 			}
 			
-		});
+		});*/
 		
 
 		return row;
@@ -130,35 +136,22 @@ public class SongAdapter extends BaseAdapter implements OnItemLongClickListener 
 		// TextView txtAlbum;
 	}
 
+	
 	@Override
-	public boolean onItemLongClick(AdapterView<?> parent, View view,
-			int position, long id) {
-		SongItem song = (SongItem) parent.getItemAtPosition(position);
-		//Submit item
-		CommThread comm = new CommThread();
-		comm.submit(song.getID());
-		comm.start();
-		Toast.makeText(context, String.format("%s from %s was added to the playlist.", song.getTitle(), song.getArtist()), Toast.LENGTH_SHORT).show();
-		return true;
+	public void onCheckedChanged(RadioGroup group, int checkedId) {
+		if (voteable) {
+			callback.vote(((SongItem)group.getTag()), checkedId == R.id.radioUp ?  EVote.UP : EVote.DOWN);
+		}
 	}
 
 	@Override
 	public int getCount() {
-		if (cur == null) {
-			return 0;
-		}
-		
-		return cur.getCount();
+		return cur == null ? 0 : cur.length;
 	}
 
 	@Override
-	public Object getItem(int position) {
-		cur.move(position);
-		return new SongItem(cur.getString(SongListCursor.ALBUM_COL),
-				cur.getString(SongListCursor.ARTIST_COL), 
-				cur.getString(SongListCursor.TITLE_COL), 
-				cur.getInt(SongListCursor.ID_COL),
-				EVote.NONE);
+	public SongItem getItem(int position) {
+		return cur[position];
 	}
 
 	@Override
@@ -166,11 +159,7 @@ public class SongAdapter extends BaseAdapter implements OnItemLongClickListener 
 		return position;
 	}
 	
-	public void setCursor(Cursor c){
-		if (cur != null){
-			cur.close();
-		}
-		
+	public void setData(SongItem[] c){
 		cur = c;
 		notifyDataSetChanged();
 	}

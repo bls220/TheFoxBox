@@ -18,50 +18,16 @@ import com.team_awesome.thefoxbox.provider.Communicator.AuthToken;
  *
  */
 class ServerAPI {
-	private static enum EMSG_TYPE {
-		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE(
-				"moodchange"), SONGLIST("songlist");
-		private String val;
-
-		EMSG_TYPE(String value) {
-			val = value;
-		}
-
-		public String toString() {
-			return val;
-		}
-	};
-	
 	private static final String REQUEST_FIELD = "Request";
 	private static final String AUTHCODE_FIELD = "AuthToken";
 	private static final String PARAMS_FIELD = "Params";
 	
-	public static JSONObject songlist(AuthToken toke) {
-		JSONObject ret = new JSONObject();
+	public static JSONArray getSongList(JSONObject obj) throws IOException {
 		try {
-			ret.put(AUTHCODE_FIELD, toke);
-			ret.put(REQUEST_FIELD, EMSG_TYPE.SONGLIST);
-			ret.put(PARAMS_FIELD, new JSONObject());
-		} catch (JSONException e) {
-			e.printStackTrace();
+			return obj.getJSONArray("Songs");
+		} catch (JSONException ex) {
+			throw new IOException(ex);
 		}
-		return ret;
-	}
-	
-	public static JSONObject login(String username) {
-		JSONObject ret = new JSONObject();
-		try {
-			ret.put(REQUEST_FIELD, EMSG_TYPE.LOGIN);
-			
-			JSONObject JSONParams = new JSONObject();
-			JSONParams.put("Name", username);
-			
-			ret.put(PARAMS_FIELD, JSONParams);
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return ret;
 	}
 	
 	public static AuthToken getAuthToken(JSONObject ret) throws IOException {
@@ -72,45 +38,54 @@ class ServerAPI {
 		}
 	}
 	
-	public static JSONObject vote(AuthToken toke, int songid, int amt) {
-		JSONObject ret = new JSONObject();
-		try {
-			ret.put(AUTHCODE_FIELD, toke);
-			ret.put(REQUEST_FIELD, EMSG_TYPE.VOTE);
-			
-			JSONObject JSONParams = new JSONObject();
-			JSONParams.put("Id", Integer.toString(songid));
-			JSONParams.put("Amt", Integer.toString(amt));
-			ret.put(PARAMS_FIELD, JSONParams);
-
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return ret;
+	public static JSONObject songlist(AuthToken toke) {
+		return wrap(toke, MsgType.SONGLIST);
 	}
-
-	public static JSONArray getSongList(JSONObject obj) throws IOException {
-		try {
-			return obj.getJSONArray("Songs");
-		} catch (JSONException ex) {
-			throw new IOException(ex);
-		}
+	
+	public static JSONObject login(String username) {
+		return wrap(null, MsgType.LOGIN, "Name", username);
+	}
+	
+	public static JSONObject vote(AuthToken toke, int songid, int amt) {
+		return wrap(toke, MsgType.VOTE, "Id", songid, "Amt", amt);
 	}
 
 	public static JSONObject search(AuthToken toke, String term) {
-		JSONObject ret = new JSONObject();
-		try {
-			ret.put(AUTHCODE_FIELD, toke);
-			ret.put(REQUEST_FIELD, EMSG_TYPE.VOTE);
-			
-			JSONObject JSONParams = new JSONObject();
-			JSONParams.put("Term", term);
-			ret.put(PARAMS_FIELD, JSONParams);
+		return wrap(toke, MsgType.SEARCH, "Term", term);
+	}
 
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		return ret;
+	public static JSONObject submit(AuthToken toke, int songid) {
+		return wrap(toke, MsgType.SUBMIT, "Id", songid);
 	}
 	
+	private static JSONObject wrap(AuthToken toke, MsgType type, Object...params) {
+		int plen = params.length;
+		if (plen % 2 != 0) {
+			throw new RuntimeException("PARAMS ARE OF THe WRONG LENGTH, SILLY!");
+		}
+		
+		JSONObject ret = new JSONObject();
+		try {
+			if (toke != null) {
+				ret.put(AUTHCODE_FIELD, toke);
+			}
+			ret.put(REQUEST_FIELD, type);
+
+			JSONObject jp = new JSONObject();
+			for (int i = 0; i < plen; i += 2) {
+				jp.put((String)params[i], params[i+1].toString());
+			}
+			ret.put(PARAMS_FIELD, jp);
+		}catch (JSONException ex) {
+			ex.printStackTrace();
+		}
+		
+		return ret;
+	}
 }
+
+
+
+
+
+

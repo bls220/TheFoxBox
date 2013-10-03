@@ -1,36 +1,26 @@
 package com.team_awesome.thefoxbox;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.json.JSONException;
-
-import android.app.ActionBar;
-import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-public class MainActivity extends FragmentActivity implements QueryCallbacks {
+import com.team_awesome.thefoxbox.provider.LoaderHelper;
+
+public class MainActivity extends FragmentActivity implements LoaderHelper.Callback<SongItem[]> {
 
 	static final String TAG = "TheFoxBox";
 
@@ -48,6 +38,7 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
+	
 
 	private HomeFragment mHomeFrag;
 	private UpcomingFragment mUpcomingFrag;
@@ -65,7 +56,8 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
-		updateUI();
+		
+		schedUpdate(0);
 	}
 
 	@Override
@@ -134,39 +126,39 @@ public class MainActivity extends FragmentActivity implements QueryCallbacks {
 		}
 	}
 
-	@Override
-	public void loginCallback(String authToken) {
-	}
-
-	@Override
-	public void queueCallback(SongItem[] data) {
-		// Forward to fragment
-		if (mHomeFrag != null)
-			mHomeFrag.queueCallback(data);
-
-		if (mUpcomingFrag != null)
-			mUpcomingFrag.queueCallback(data);
-
-	}
-
-	@Override
-	public void searchCallback(SongItem[] results) {
-	}
-
-	public void updateUI() {
-		Log.d(TAG, "loop");
-		if (HomeFragment.loggedIn == true) {
-			CommThread comm = new CommThread();
-			comm.getQueue(this);
-			comm.start();
+	private void schedUpdate(int delay) {
+		if (delay == 0) {
+			LoaderHelper.getSongList(this);
+		} else {
+			new Timer().schedule(new TimerTask() {
+				@Override
+				public void run() {
+					LoaderHelper.getSongList(MainActivity.this);
+				}
+			}, delay);
 		}
-
-		// Run in future
-		new Timer().schedule(new TimerTask() {
-			@Override
-			public void run() {
-				updateUI();
+	}
+	
+	@Override
+	public void done(SongItem[] ret) {
+		if (ret.length == 0) {
+			Log.w(TAG, "Weird result: Length of songlist is 0");
+		} else {
+			if (mHomeFrag != null) {
+				mHomeFrag.setNowPlaying(ret[0]);
 			}
-		}, 5000);
+			if (mUpcomingFrag != null && ret.length > 1) {
+				ret = Arrays.copyOfRange(ret, 1, ret.length);
+				mUpcomingFrag.setUpcoming(ret);
+			}
+		}
+		
+		// Update again in 5 seconds
+		schedUpdate(5000);
+	}
+
+	@Override
+	public void err(Exception ex) {
+		Toast.makeText(this, "Could not load song queue: " + ex, Toast.LENGTH_LONG).show();
 	}
 }
