@@ -3,6 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
+import com.team_awesome.thefoxbox.data.SongItem;
+
 import android.widget.TextView;
 
 import android.os.Bundle;
@@ -66,7 +68,7 @@ public class HomeFragment extends Fragment {
 	
 	public void setNowPlaying(SongItem s) {
 		View v = getView();
-		((TextView) v.findViewById(R.id.npTitle)).setText(s.getTitle());
-		((TextView) v.findViewById(R.id.npArtist)).setText(s.getArtist());
+		((TextView) v.findViewById(R.id.npTitle)).setText(s.mTitle);
+		((TextView) v.findViewById(R.id.npArtist)).setText(s.mArtist);
 	}
 }

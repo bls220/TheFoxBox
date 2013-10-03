@@ -9,8 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.team_awesome.thefoxbox.SongItem;
-import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.data.SongItem;
+import com.team_awesome.thefoxbox.data.EVote;
 
 public class Communicator {
 	private final Socket sock;
@@ -21,26 +21,7 @@ public class Communicator {
 		this.auth = auth;
 	}
 
-	/**
-	 * Doing it this way makes it easier to add stuff to the token later if
-	 * needed. I admit right now it looks like overkill.
-	 * 
-	 * @author Kevin
-	 * 
-	 */
-	final static class AuthToken {
-		private final String token;
-
-		public AuthToken(String auth) {
-			token = auth;
-		}
-
-		public String toString() {
-			return token;
-		}
-	}
-
-	private SongItem[] parseSongList(JSONObject obj) throws IOException {
+	private static SongItem[] parseSongList(JSONObject obj) throws IOException {
 		try {
 			JSONArray arr = obj.getJSONArray("Songs");
 			int len = arr.length();
@@ -59,20 +40,20 @@ public class Communicator {
 	}
 
 	SongItem[] getSongList() throws IOException {
-		return parseSongList(sendReadJSON(sock, ServerAPI.songlist(auth)));
+		return parseSongList(sendReadJSON(sock, songlist(auth)));
 	}
 
 	SongItem[] search(String term) throws IOException {
-		return parseSongList(sendReadJSON(sock, ServerAPI.search(auth, term)));
+		return parseSongList(sendReadJSON(sock, search(auth, term)));
 	}
 
 	void vote(int songid, int amt) throws IOException {
-		sendJSON(sock, ServerAPI.vote(auth, songid, amt));
+		sendJSON(sock, vote(auth, songid, amt));
 	}
 	
 	String submit(int songid) throws IOException {
 		try {
-			JSONObject obj = sendReadJSON(sock, ServerAPI.submit(auth, songid));
+			JSONObject obj = sendReadJSON(sock, submit(auth, songid));
 			String ret = obj.getString("Ret");
 			return ret.length() == 0 ? null : ret;
 		} catch (JSONException ex) {
@@ -80,12 +61,81 @@ public class Communicator {
 		}
 	}
 	
+	/**
+	 * Keeps track of the different names of commands to send to the server.
+	 *
+	 */
+	enum MsgType {
+		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE(
+				"moodchange"), SONGLIST("songlist");
+		private String val;
+
+		MsgType(String value) {
+			val = value;
+		}
+
+		public String toString() {
+			return val;
+		}
+	}
 	
+	private static final String REQUEST_FIELD = "Request";
+	private static final String AUTHCODE_FIELD = "AuthToken";
+	private static final String PARAMS_FIELD = "Params";
+	
+	static AuthToken parseAuthToken(JSONObject ret) throws IOException {
+		try {
+			return new AuthToken(ret.getString(AUTHCODE_FIELD));
+		} catch(JSONException ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	static JSONObject songlist(AuthToken toke) {
+		return wrap(toke, MsgType.SONGLIST);
+	}
+	
+	static JSONObject login(String username) {
+		return wrap(null, MsgType.LOGIN, "Name", username);
+	}
+	
+	static JSONObject vote(AuthToken toke, int songid, int amt) {
+		return wrap(toke, MsgType.VOTE, "Id", songid, "Amt", amt);
+	}
 
-	// TODO: These should really be in ServerAPI. Or maybe combine the ServerAPI
-	// with this class.
-	// We don't need that much abstraction at this point.
+	static JSONObject search(AuthToken toke, String term) {
+		return wrap(toke, MsgType.SEARCH, "Term", term);
+	}
 
+	static JSONObject submit(AuthToken toke, int songid) {
+		return wrap(toke, MsgType.SUBMIT, "Id", songid);
+	}
+	
+	private static JSONObject wrap(AuthToken toke, MsgType type, Object...params) {
+		int plen = params.length;
+		if (plen % 2 != 0) {
+			throw new RuntimeException("PARAMS ARE OF THe WRONG LENGTH, SILLY!");
+		}
+		
+		JSONObject ret = new JSONObject();
+		try {
+			if (toke != null) {
+				ret.put(AUTHCODE_FIELD, toke);
+			}
+			ret.put(REQUEST_FIELD, type);
+
+			JSONObject jp = new JSONObject();
+			for (int i = 0; i < plen; i += 2) {
+				jp.put((String)params[i], params[i+1].toString());
+			}
+			ret.put(PARAMS_FIELD, jp);
+		}catch (JSONException ex) {
+			ex.printStackTrace();
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Send JSON to the destination and wait for a response. Also deals with
 	 * retries.

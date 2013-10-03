@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import com.team_awesome.thefoxbox.provider.Communicator.AuthToken;
 
 /**
  * I've always hated factories used for factories sake, but this instance it actually makes sense
@@ -47,7 +46,7 @@ public class CommunicatorFactory {
 	 */
 	private synchronized AuthToken getAuth(Socket sock) throws IOException {
 		if (auth == null) {
-			auth = ServerAPI.getAuthToken(Communicator.sendReadJSON(sock, ServerAPI.login("dummy")));
+			auth = Communicator.parseAuthToken(Communicator.sendReadJSON(sock, Communicator.login("dummy")));
 		}
 		
 		return auth;

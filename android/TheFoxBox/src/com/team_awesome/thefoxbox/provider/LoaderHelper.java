@@ -2,7 +2,7 @@ package com.team_awesome.thefoxbox.provider;
 
 import java.io.IOException;
 
-import com.team_awesome.thefoxbox.SongItem;
+import com.team_awesome.thefoxbox.data.SongItem;
 
 import android.os.AsyncTask;
 import android.util.Log;

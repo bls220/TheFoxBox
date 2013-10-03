@@ -3,7 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
-import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.data.EVote;
+import com.team_awesome.thefoxbox.data.SongItem;
 
 import android.app.Activity;
 import android.content.Context;
@@ -84,8 +85,8 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 			// Set the tag so that the handler can figure out which one the user clicked on
 			holder.voteGroup.setTag(song);
 			
-			holder.txtTitle.setText(song.getTitle());
-			holder.txtArtist.setText(song.getArtist());
+			holder.txtTitle.setText(song.mTitle);
+			holder.txtArtist.setText(song.mArtist);
 			// TODO: holder.imgArt.setImageURI(uri);
 			switch(song.getVote()){
 			case DOWN:

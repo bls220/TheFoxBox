@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.team_awesome.thefoxbox.data.SongItem;
 import com.team_awesome.thefoxbox.provider.LoaderHelper;
 
 public class MainActivity extends FragmentActivity implements LoaderHelper.Callback<SongItem[]> {

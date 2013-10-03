@@ -3,7 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
-import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.data.EVote;
+import com.team_awesome.thefoxbox.data.SongItem;
 import com.team_awesome.thefoxbox.provider.LoaderHelper;
 
 import android.app.Activity;
@@ -56,7 +57,7 @@ public class SearchFragment extends Activity implements SongAdapter.ActionCallba
 
 	@Override
 	public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-		LoaderHelper.submit(enqueueCallback, mSearchAdapter.getItem(position).getID());
+		LoaderHelper.submit(enqueueCallback, mSearchAdapter.getItem(position).mID);
 		
 		return true;
 	}

@@ -3,7 +3,8 @@
  */
 package com.team_awesome.thefoxbox;
 
-import com.team_awesome.thefoxbox.SongItem.EVote;
+import com.team_awesome.thefoxbox.data.EVote;
+import com.team_awesome.thefoxbox.data.SongItem;
 import com.team_awesome.thefoxbox.provider.LoaderHelper;
 
 import android.os.Bundle;
@@ -52,14 +53,14 @@ public class UpcomingFragment extends Fragment implements SongAdapter.ActionCall
 
 	@Override
 	public void vote(SongItem song, EVote vote) {
-		LoaderHelper.vote(song.getID(), vote.value());
+		LoaderHelper.vote(song.mID, vote.value());
 	}
 
 	@Override
 	public boolean onItemLongClick(AdapterView<?> parent, View view,
 			int position, long id) {
 		SongItem song = suggestions.getItem(position);
-		LoaderHelper.submit(this, song.getID());
+		LoaderHelper.submit(this, song.mID);
 		
 		return true;
 	}
