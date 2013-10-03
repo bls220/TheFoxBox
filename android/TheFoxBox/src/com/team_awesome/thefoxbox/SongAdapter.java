@@ -3,11 +3,12 @@
  */
 package com.team_awesome.thefoxbox;
 
+import java.util.HashMap;
+
 import com.team_awesome.thefoxbox.data.EVote;
 import com.team_awesome.thefoxbox.data.SongItem;
 
 import android.app.Activity;
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +28,7 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 		void vote(SongItem song, EVote vote);
 	}
 	
-	protected final Context context;
+	protected final LayoutInflater flate;
 	protected final ActionCallback callback;
 	protected final boolean voteable;
 	static final int layoutResourceId = R.layout.list_item_song;
@@ -40,8 +41,8 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 	 *        clicked the {@link ActionCallback#vote(SongItem, EVote)} method is called. Else there will be no buttons nor
 	 *        callback.
 	 */
-	public SongAdapter(Context context, ActionCallback callback, boolean voteable) {
-		this.context = context;
+	public SongAdapter(Activity context, ActionCallback callback, boolean voteable) {
+		this.flate = context.getLayoutInflater();
 		this.callback = callback;
 		this.voteable = voteable;
 		
@@ -51,6 +52,12 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 	}
 
 	private SongItem[] cur;
+	// TODO: Make sure to clear this when a mood changes
+	private final HashMap<SongItem, Boolean> checkedMap = new HashMap<SongItem, Boolean>();
+	
+	public void clearCheckedCache() {
+		checkedMap.clear();
+	}
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
@@ -58,8 +65,7 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 		SongHolder holder;
 
 		if (row == null) {
-			LayoutInflater inflater = ((Activity) context).getLayoutInflater();
-			row = inflater.inflate(layoutResourceId, parent, false);
+			row = flate.inflate(layoutResourceId, parent, false);
 
 			holder = new SongHolder();
 			holder.imgArt = (ImageView) row
@@ -79,28 +85,23 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 		}
 		
 		holder.voteGroup.setOnCheckedChangeListener(null); //Don't report changes during setup
-		
+
 		SongItem song = getItem(position);
+		holder.txtTitle.setText(song.mTitle);
+		holder.txtArtist.setText(song.mArtist);
+		// TODO: holder.imgArt.setImageURI(uri);
+		
 		if (voteable) {
 			// Set the tag so that the handler can figure out which one the user clicked on
 			holder.voteGroup.setTag(song);
 			
-			holder.txtTitle.setText(song.mTitle);
-			holder.txtArtist.setText(song.mArtist);
-			// TODO: holder.imgArt.setImageURI(uri);
-			switch(song.getVote()){
-			case DOWN:
-				holder.voteDown.setChecked(true);
-				break;
-			case NONE:
+			Boolean ch = checkedMap.get(song);
+			if (ch == null) {
 				holder.voteGroup.clearCheck();
-				break;
-			case UP:
+			} else if (ch) {
 				holder.voteUp.setChecked(true);
-				break;
-			default:
-				break;
-			
+			} else {
+				holder.voteDown.setChecked(true);
 			}
 	
 			// Set click listeners
@@ -141,7 +142,10 @@ public class SongAdapter extends BaseAdapter implements OnCheckedChangeListener 
 	@Override
 	public void onCheckedChanged(RadioGroup group, int checkedId) {
 		if (voteable) {
-			callback.vote(((SongItem)group.getTag()), checkedId == R.id.radioUp ?  EVote.UP : EVote.DOWN);
+			SongItem it = (SongItem)group.getTag();
+			boolean vote = checkedId == R.id.radioUp;
+			callback.vote(it, vote ?  EVote.UP : EVote.DOWN);
+			checkedMap.put(it, vote);
 		}
 	}
 

@@ -10,7 +10,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.team_awesome.thefoxbox.data.SongItem;
-import com.team_awesome.thefoxbox.data.EVote;
 
 public class Communicator {
 	private final Socket sock;
@@ -31,7 +30,7 @@ public class Communicator {
 
 				ret[i] = new SongItem(s.getString("Album"),
 						s.getString("Title"), s.getString("Artist"),
-						s.getInt("Id"), EVote.NONE);
+						s.getInt("Id"));
 			}
 			return ret;
 		} catch (JSONException ex) {
