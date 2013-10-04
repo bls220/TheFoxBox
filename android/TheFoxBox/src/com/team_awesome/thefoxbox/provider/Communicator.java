@@ -1,5 +1,6 @@
 package com.team_awesome.thefoxbox.provider;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -189,6 +190,7 @@ public class Communicator {
 			}
 		}
 		
+		Log.i("Communicator", "Reading input of length " + len);
 		if (len < 0) {
 			throw new IOException("Invalid message length.");
 		}
@@ -214,10 +216,11 @@ public class Communicator {
 	 * @throws IOException
 	 */
 	static void sendJSON(Socket dest, JSONObject json) throws IOException {
-		OutputStream out = dest.getOutputStream();
+		OutputStream out = new BufferedOutputStream(dest.getOutputStream());
 		byte[] son = json.toString().getBytes();
 
 		int len = json.length();
+		Log.i("Communicator", "Writing data of len " + len + ": " + json.toString());
 		out.write(len);
 		out.write(len >> 8);
 		out.write(len >> 16);

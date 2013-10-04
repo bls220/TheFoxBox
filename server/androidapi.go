@@ -90,6 +90,7 @@ func GotConn(conn net.Conn) error {
 		return errors.New("Unable to fully read the payload from the client")
 	}
 	
+    klog.Info(AAM, "Got json data of len ", llen, ":", string(buf))
 	req := &AndroidRequest{Params:make(map[string]string),}
 	if err := json.Unmarshal(buf, req); err != nil {
 		return err
@@ -283,7 +284,7 @@ func procSubmit(req*AndroidRequest) error {
 	}
 }
 
-func pong(re1*AndroidRequest) error {
+func pong(req*AndroidRequest) error {
 	u := req.getUser()
 	var ret struct {
 		Request string

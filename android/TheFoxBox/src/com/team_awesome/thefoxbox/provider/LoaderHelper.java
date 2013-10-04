@@ -24,7 +24,7 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 		void err(Exception ex);
 	}
 	
-	private static final CommunicatorFactory fact = new CommunicatorFactory("192.168.1.1", 5853);
+	private static final CommunicatorFactory fact = new CommunicatorFactory("192.168.1.108", 5853);
 	
 	public static void init(LoginInfo logfo) {
 		fact.init(logfo);

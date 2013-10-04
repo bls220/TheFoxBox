@@ -24,6 +24,9 @@ type AppErr struct {
 	err error
 }
 func (a AppErr) Error() string {
+	if a.err == nil {
+        return fmt.Sprint("In ", a.module, ": ", a.desc)
+    }
 	if a.fatal {
 		a.desc = "FATAL: " + a.desc
 	}
