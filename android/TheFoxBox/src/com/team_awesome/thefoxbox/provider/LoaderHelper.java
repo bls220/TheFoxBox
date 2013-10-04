@@ -7,7 +7,17 @@ import com.team_awesome.thefoxbox.data.SongItem;
 import android.os.AsyncTask;
 import android.util.Log;
 
-// TODO: Use an Executor so that we can have multiple requests out at a time.
+/**
+ * This class represents the glue between the UI and talking to the server. Because it faces the UI and calls
+ * the data layer, it may seem like there is a bit of duplication. This duplication is not strictly needed, but
+ * it serves as a single point at which we deal with threading so that the UI/data retrieval doesn't have to worry
+ * about it as much.
+ *  
+ * @author Kevin
+ *
+ * TODO: Use an Executor so that we can have multiple requests out at a time.
+ * @param <Ret>
+ */
 public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 	public interface Callback<E> {
 		void done(E ret);
@@ -15,6 +25,10 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 	}
 	
 	private static final CommunicatorFactory fact = new CommunicatorFactory("192.168.1.1", 5853);
+	
+	public static void init(LoginInfo logfo) {
+		fact.init(logfo);
+	}
 	
 	private final CallImpls type;
 	private final Callback<Ret> call;
@@ -36,7 +50,7 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 	@Override
 	protected void onPostExecute(Ret result) {
 		if (result instanceof Exception) {
-			// We want the gui thread to die 
+			// We want the gui thread to know about this.
 			call.err((Exception)result);
 		} else {
 			if (call == null) {
@@ -66,7 +80,11 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 		new LoaderHelper<String>(CallImpls.SUBMIT, call).execute(songid);
 	}
 	
-	static enum CallImpls {
+	public static void ping(Callback<Boolean> call) {
+		new LoaderHelper<Boolean>(CallImpls.PING, call).execute();
+	}
+	
+	private static enum CallImpls {
 		SONGLIST() {
 			@Override
 			Object s(Object[] _) throws IOException {
@@ -89,10 +107,12 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 				fact.get().submit((Integer)params[0]);
 				return null;
 			}
+		}, PING() {
+			@Override
+			Object s(Object[] params) throws IOException {
+				return fact.get().ping();
+			}
 		};
-		
-		
-		
 		
 		abstract Object s(Object[] params) throws IOException;
 	}

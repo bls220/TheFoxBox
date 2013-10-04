@@ -4,20 +4,31 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 import com.team_awesome.thefoxbox.data.SongItem;
 
+/**
+ * All of the methods here are blocking. In general most methods will fail after a few retries by throwing a
+ * {@link SocketTimeoutException};
+ * @author Kevin
+ *
+ */
 public class Communicator {
 	private final Socket sock;
 	private final AuthToken auth;
 
-	Communicator(Socket sock, AuthToken auth) {
+	Communicator(Socket sock, AuthToken auth) throws IOException {
 		this.sock = sock;
 		this.auth = auth;
+
+		sock.setSoTimeout(5000);
 	}
 
 	private static SongItem[] parseSongList(JSONObject obj) throws IOException {
@@ -39,34 +50,53 @@ public class Communicator {
 	}
 
 	SongItem[] getSongList() throws IOException {
-		return parseSongList(sendReadJSON(sock, songlist(auth)));
+		return parseSongList(sendReadJSON(sock, wrap(auth, MsgType.SONGLIST)));
 	}
 
 	SongItem[] search(String term) throws IOException {
-		return parseSongList(sendReadJSON(sock, search(auth, term)));
+		return parseSongList(sendReadJSON(sock, wrap(auth, MsgType.SEARCH, "Term", term)));
 	}
 
 	void vote(int songid, int amt) throws IOException {
-		sendJSON(sock, vote(auth, songid, amt));
+		sendJSON(sock, wrap(auth, MsgType.VOTE, "Id", songid, "Amt", amt));
 	}
-	
+
 	String submit(int songid) throws IOException {
 		try {
-			JSONObject obj = sendReadJSON(sock, submit(auth, songid));
+			JSONObject obj = sendReadJSON(sock, wrap(auth, MsgType.SUBMIT, "Id", songid));
 			String ret = obj.getString("Ret");
 			return ret.length() == 0 ? null : ret;
 		} catch (JSONException ex) {
 			throw new IOException(ex);
 		}
 	}
-	
+
+	boolean ping() throws IOException {
+		try {
+			JSONObject ret = sendReadJSON(sock, wrap(auth, MsgType.PING));
+			String v = ret.getString("Request");
+			return v.equals("pong");
+		} catch (JSONException ex) {
+			throw new IOException(ex);
+		} catch (SocketTimeoutException ex) {
+			Log.w("Communicator", "Ping timed out: " + ex);
+			return false;
+		}
+	}
+
+	static AuthToken login(Socket sock, LoginInfo logfo) throws IOException {
+		String username = logfo.username;
+		return parseAuthToken(Communicator.sendReadJSON(sock,
+				wrap(null, MsgType.LOGIN, "Name", username)));
+	}
+
 	/**
 	 * Keeps track of the different names of commands to send to the server.
-	 *
+	 * 
 	 */
 	enum MsgType {
 		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE(
-				"moodchange"), SONGLIST("songlist");
+				"moodchange"), SONGLIST("songlist"), PING("ping");
 		private String val;
 
 		MsgType(String value) {
@@ -77,45 +107,26 @@ public class Communicator {
 			return val;
 		}
 	}
-	
+
 	private static final String REQUEST_FIELD = "Request";
 	private static final String AUTHCODE_FIELD = "AuthToken";
 	private static final String PARAMS_FIELD = "Params";
-	
+
 	static AuthToken parseAuthToken(JSONObject ret) throws IOException {
 		try {
 			return new AuthToken(ret.getString(AUTHCODE_FIELD));
-		} catch(JSONException ex) {
+		} catch (JSONException ex) {
 			throw new IOException(ex);
 		}
 	}
-	
-	static JSONObject songlist(AuthToken toke) {
-		return wrap(toke, MsgType.SONGLIST);
-	}
-	
-	static JSONObject login(String username) {
-		return wrap(null, MsgType.LOGIN, "Name", username);
-	}
-	
-	static JSONObject vote(AuthToken toke, int songid, int amt) {
-		return wrap(toke, MsgType.VOTE, "Id", songid, "Amt", amt);
-	}
 
-	static JSONObject search(AuthToken toke, String term) {
-		return wrap(toke, MsgType.SEARCH, "Term", term);
-	}
-
-	static JSONObject submit(AuthToken toke, int songid) {
-		return wrap(toke, MsgType.SUBMIT, "Id", songid);
-	}
-	
-	private static JSONObject wrap(AuthToken toke, MsgType type, Object...params) {
+	private static JSONObject wrap(AuthToken toke, MsgType type,
+			Object... params) {
 		int plen = params.length;
 		if (plen % 2 != 0) {
 			throw new RuntimeException("PARAMS ARE OF THe WRONG LENGTH, SILLY!");
 		}
-		
+
 		JSONObject ret = new JSONObject();
 		try {
 			if (toke != null) {
@@ -125,21 +136,27 @@ public class Communicator {
 
 			JSONObject jp = new JSONObject();
 			for (int i = 0; i < plen; i += 2) {
-				jp.put((String)params[i], params[i+1].toString());
+				jp.put((String) params[i], params[i + 1].toString());
 			}
 			ret.put(PARAMS_FIELD, jp);
-		}catch (JSONException ex) {
+		} catch (JSONException ex) {
 			ex.printStackTrace();
 		}
-		
+
 		return ret;
 	}
-	
+
+
+	/**
+	 * Calls {@link #sendReadJSON(Socket, JSONObject, int)} with a retry value of 5.
+	 */
+	static JSONObject sendReadJSON(Socket dest, JSONObject json)
+			throws IOException { 
+		return sendReadJSON(dest, json, 5);
+	}
 	/**
 	 * Send JSON to the destination and wait for a response. Also deals with
 	 * retries.
-	 * 
-	 * TODO: Deal with retries.
 	 * 
 	 * This is implemented as a static method taking a sock so that it can be
 	 * shared by the CommunicatorFactory's logging in method.
@@ -149,13 +166,29 @@ public class Communicator {
 	 * @throws IOException
 	 * @throws JSONException
 	 */
-	static JSONObject sendReadJSON(Socket dest, JSONObject json)
+	static JSONObject sendReadJSON(Socket dest, JSONObject json, int numRetries)
 			throws IOException {
 		sendJSON(dest, json);
 
 		InputStream in = dest.getInputStream();
-		int len = in.read() | (in.read() << 8) | (in.read() << 16)
-				| (in.read() << 24);
+		
+		int len;
+		while (true) {
+			try {
+				len = in.read() | (in.read() << 8) | (in.read() << 16)
+						| (in.read() << 24);
+				
+				// Got the data!
+				break;
+			} catch (SocketTimeoutException ex) {
+				numRetries--;
+				if (numRetries <= 0) {
+					// Out of retries;
+					throw ex;
+				}
+			}
+		}
+		
 		if (len < 0) {
 			throw new IOException("Invalid message length.");
 		}

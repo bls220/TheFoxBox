@@ -110,6 +110,8 @@ func GotConn(conn net.Conn) error {
 			return procSearch(req)
 		case "login":
 			return logInUser(req)
+        case "ping":
+            return pong(req)
 	}
 	return errors.New(fmt.Sprint("Unknown request:", req))
 }
@@ -281,7 +283,19 @@ func procSubmit(req*AndroidRequest) error {
 	}
 }
 
-
+func pong(re1*AndroidRequest) error {
+	u := req.getUser()
+	var ret struct {
+		Request string
+	}
+	
+	if u == nil {
+		ret.Request = "wrong"
+	} else {
+		ret.Request = "pong"
+	}
+	return req.Respond(ret)
+}
 
 
 

@@ -4,77 +4,44 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-        <TextView
-            android:id="@+id/textView3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="25dp"
-            android:text="Now Playing:"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-        <ImageView
-            android:id="@+id/imageView1"
-            android:layout_width="110dp"
-            android:layout_height="110dp"
-            android:layout_below="@+id/textView3"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="14dp"
-            android:scaleType="center"
-            android:src="@android:drawable/alert_dark_frame" />
-
-        <TextView
-            android:id="@+id/npTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@+id/imageView1"
-            android:layout_below="@+id/imageView1"
-            android:layout_marginTop="14dp"
-            android:text="Large Text"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
-
-        <TextView
-            android:id="@+id/npArtist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/npTitle"
-            android:layout_centerHorizontal="true"
-            android:text="Small Text"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-    
-    
-    <EditText
-        android:id="@+id/txtUser"
+    <TextView
+        android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_toLeftOf="@+id/btnLogin"
-        android:layout_weight="1"
-        android:ems="10" />
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp"
+        android:text="Now Playing:"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
 
-    <ProgressBar
-        android:id="@+id/loginBar"
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_below="@+id/textView3"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="14dp"
+        android:scaleType="center"
+        android:src="@android:drawable/alert_dark_frame" />
+
+    <TextView
+        android:id="@+id/npTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@+id/btnLogin"
-        android:layout_toRightOf="@id/txtUser"
-        android:layout_weight="1"
-        android:indeterminate="true"
-        android:visibility="gone" />
+        android:layout_alignLeft="@+id/imageView1"
+        android:layout_below="@+id/imageView1"
+        android:layout_marginTop="14dp"
+        android:text="Large Text"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
-    <Button
-        android:id="@+id/btnLogin"
-        style="?android:attr/buttonStyleSmall"
+    <TextView
+        android:id="@+id/npArtist"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_weight="1"
-        android:text="Login" />
+        android:layout_below="@+id/npTitle"
+        android:layout_centerHorizontal="true"
+        android:text="Small Text"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
 
     <RadioGroup
         android:id="@+id/radioGroup1"

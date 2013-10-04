@@ -9,6 +9,18 @@ Current definition of api:
 Also the Go program is going to run on port 5853
 		
 JSON descriptions:
+	Ping/Pong:
+		At any time, the Android device may want to test the connection without adding load to the server.
+		It also is useful for checking to make sure an AuthToken is valid.
+		To do this, simply pass the following thing:
+		
+		-Request: "ping"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			(None)
+		-Returns:
+			A JSON object with the Request variable set to "pong" if the AuthToken is valid. Else there will
+			be no return value.
 	A song list:
 		-Request: "songlist"; "search"; whatever request caused the songlist to be returned
 		-Songs: (A list of the following objects)

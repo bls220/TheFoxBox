@@ -30,6 +30,18 @@ public class CommunicatorFactory {
 	}
 	
 	/**
+	 * Set in {@link #init(String)}. Must only be accessed by threads holding a mutex on (this).
+	 */
+	private LoginInfo logfo;
+	synchronized void init(LoginInfo logfo) {
+		this.logfo = logfo;
+	}
+	
+	private synchronized boolean initted() {
+		return logfo != null;
+	}
+	
+	/**
 	 * Lazily set. Should only ever be accessed by {@link #getAuth(Socket)}
 	 */
 	private AuthToken auth;
@@ -46,7 +58,10 @@ public class CommunicatorFactory {
 	 */
 	private synchronized AuthToken getAuth(Socket sock) throws IOException {
 		if (auth == null) {
-			auth = Communicator.parseAuthToken(Communicator.sendReadJSON(sock, Communicator.login("dummy")));
+			if (!initted()) {
+				throw new RuntimeException("You must not try to log in without initting the CommunicatorFactory!");
+			}
+			auth = Communicator.login(sock, logfo);
 		}
 		
 		return auth;
