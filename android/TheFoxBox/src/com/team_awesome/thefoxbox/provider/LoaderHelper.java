@@ -2,6 +2,7 @@ package com.team_awesome.thefoxbox.provider;
 
 import java.io.IOException;
 
+import com.team_awesome.thefoxbox.data.Mood;
 import com.team_awesome.thefoxbox.data.SongItem;
 
 import android.os.AsyncTask;
@@ -72,7 +73,7 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 	
 	// Currently doesn't return a value
 	public static void vote(int songid, int voteamt) {
-		new LoaderHelper<SongItem[]>(CallImpls.VOTE, null).execute(songid, voteamt);
+		new LoaderHelper<Void>(CallImpls.VOTE, null).execute(songid, voteamt);
 	}
 	
 	// Currently doesn't return a value
@@ -82,6 +83,14 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 	
 	public static void ping(Callback<Boolean> call) {
 		new LoaderHelper<Boolean>(CallImpls.PING, call).execute();
+	}
+	
+	public static void moodchange(Mood m) {
+		new LoaderHelper<Void>(CallImpls.MOODCHANGE, null).execute(m);
+	}
+	
+	public static void suggest(Callback<SongItem[]> call) {
+		new LoaderHelper<SongItem[]>(CallImpls.SUGGEST, call).execute();
 	}
 	
 	private static enum CallImpls {
@@ -109,8 +118,19 @@ public class LoaderHelper<Ret> extends AsyncTask<Object, Void, Ret> {
 			}
 		}, PING() {
 			@Override
-			Object s(Object[] params) throws IOException {
+			Object s(Object[] _) throws IOException {
 				return fact.get().ping();
+			}
+		}, MOODCHANGE() {
+			@Override
+			Object s(Object[] params) throws IOException {
+				fact.get().moodchange((Mood)params[0]);
+				return null;
+			}
+		}, SUGGEST() {
+			@Override
+			Object s(Object[] _) throws IOException {
+				return fact.get().suggest();
 			}
 		};
 		

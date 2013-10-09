@@ -111,8 +111,10 @@ func GotConn(conn net.Conn) error {
 			return procSearch(req)
 		case "login":
 			return logInUser(req)
-        case "ping":
-            return pong(req)
+		case "ping":
+			return pong(req)
+		case "suggest":
+			return procSuggest(req)
 	}
 	return errors.New(fmt.Sprint("Unknown request:", req))
 }
@@ -205,6 +207,17 @@ func procSongList(req*AndroidRequest) error {
 	}
 }
 
+func procSuggest(req*AndroidRequest) error {
+	u := req.getUser()
+	if u == nil { return TokenNotFound }
+	
+	if list, err := SuggestSongsForPerson(10, u); err != nil {
+		return err
+	} else {
+		return sendSongList("suggest", list, req)
+	}
+}
+
 func procMoodChange(req*AndroidRequest) error {
 	if req.require("Mood") { return KeysNotFound }
 	u := req.getUser()
@@ -215,11 +228,11 @@ func procMoodChange(req*AndroidRequest) error {
 		return InvalidFormat
 	}
 	
-	if r, err := strconv.Atoi(m[0]); err != nil {
+	if r, err := strconv.Atoi(m[0]); err != nil || r < 0 || r > 255 {
 		return InvalidFormat
-	} else if g, err := strconv.Atoi(m[1]); err != nil {
+	} else if g, err := strconv.Atoi(m[1]); err != nil || g < 0 || g > 255 {
 		return InvalidFormat
-	} else if b, err := strconv.Atoi(m[2]); err != nil {
+	} else if b, err := strconv.Atoi(m[2]); err != nil || b < 0 || b > 255 {
 		return InvalidFormat
 	} else {
 		u.CurMood = dt.Mood{r,g,b}

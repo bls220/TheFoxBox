@@ -34,6 +34,14 @@ JSON descriptions:
 		-AuthToken: The token retrieved from logging in
 		-Params:
 			(None)
+		-Returns: a songlist
+	
+	When requesting a list of song suggestions:
+		-Request: "suggest"
+		-AuthToken: The token retrieved from logging in
+		-Params:
+			(None)
+		-Returns: a songlist
 			
 	When logging in:
 		-Request: "login"

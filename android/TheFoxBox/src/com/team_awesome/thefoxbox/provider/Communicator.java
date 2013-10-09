@@ -13,6 +13,7 @@ import org.json.JSONObject;
 
 import android.util.Log;
 
+import com.team_awesome.thefoxbox.data.Mood;
 import com.team_awesome.thefoxbox.data.SongItem;
 
 /**
@@ -53,6 +54,10 @@ public class Communicator {
 	SongItem[] getSongList() throws IOException {
 		return parseSongList(sendReadJSON(sock, wrap(auth, MsgType.SONGLIST)));
 	}
+	
+	SongItem[] suggest() throws IOException {
+		return parseSongList(sendReadJSON(sock, wrap(auth, MsgType.SUGGEST)));
+	}
 
 	SongItem[] search(String term) throws IOException {
 		return parseSongList(sendReadJSON(sock, wrap(auth, MsgType.SEARCH, "Term", term)));
@@ -60,6 +65,11 @@ public class Communicator {
 
 	void vote(int songid, int amt) throws IOException {
 		sendJSON(sock, wrap(auth, MsgType.VOTE, "Id", songid, "Amt", amt));
+	}
+	
+	void moodchange(Mood m) throws IOException {
+		String payload = m.r + ";" + m.g + ";" + m.b;
+		sendJSON(sock, wrap(auth, MsgType.MOODCHANGE, "Mood", payload));
 	}
 
 	String submit(int songid) throws IOException {
@@ -97,7 +107,7 @@ public class Communicator {
 	 */
 	enum MsgType {
 		SEARCH("search"), VOTE("vote"), LOGIN("login"), SUBMIT("submit"), MOODCHANGE(
-				"moodchange"), SONGLIST("songlist"), PING("ping");
+				"moodchange"), SONGLIST("songlist"), PING("ping"), SUGGEST("suggest");
 		private String val;
 
 		MsgType(String value) {
@@ -219,7 +229,7 @@ public class Communicator {
 		OutputStream out = new BufferedOutputStream(dest.getOutputStream());
 		byte[] son = json.toString().getBytes();
 
-		int len = json.length();
+		int len = son.length;
 		Log.i("Communicator", "Writing data of len " + len + ": " + json.toString());
 		out.write(len);
 		out.write(len >> 8);

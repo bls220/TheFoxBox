@@ -3,7 +3,6 @@ package main
 import (
 	"./dt"
 	"sync"
-	"container/heap"
 	"sort"
 	"fmt"
 	"./database"
@@ -29,14 +28,8 @@ func (s*SongQueue) Less(i, j int) bool {
 func (s*SongQueue) Swap(i, j int) {
 	s.songs[i], s.songs[j] = s.songs[j], s.songs[i]
 }
-func (s*SongQueue) Push(x interface{}) {
-	s.songs = append(s.songs, x.(SongPoint))
-}
-func (s*SongQueue) Pop() interface{} {
-	ll := len(s.songs)-1
-	var ret interface{}
-	ret, s.songs = s.songs[ll-1], s.songs[:ll-1]
-	return ret
+func (s*SongQueue) Push(x SongPoint) {
+	s.songs = append(s.songs, x)
 }
 
 //Singleton
@@ -63,21 +56,22 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 	s.Lock()
 	defer s.Unlock()
 	
-	cpy := make([]SongPoint, len(s.songs.songs))
-	copy(cpy, s.songs.songs)
-	ss := SongQueue{cpy}
-	sort.Sort(&ss)
+	baseList := s.songs.songs
 	
-	ll := len(ss.songs)
+	ll := len(baseList)
 	if s.isPlaying {
 		ll++
 	}
 	ret := make([]dt.Song, ll)
+	var workingSet []dt.Song
 	if s.isPlaying {
 		ret[0] = s.nowPlaying
+		workingSet = ret[1:]
+	} else {
+		workingset = ret[:]
 	}
-	for i, v := range ss.songs {
-		ret[i+1] = v.s
+	for i, v := range baseList {
+		workingset[i] = v.s
 	}
 	
 	return ret, nil
@@ -89,7 +83,7 @@ func (s*DJ) prime() error {
 	s.Unlock() // Don't lock during this (db could block)
 
 	for needSongs > 0 {
-		newSongs, err := SuggestSongs(needSongs)
+		newSongs, err := SuggestSongsForRoom(needSongs)
 		if err != nil {
 			if s.songs.Len() == 0 {
 				return err
@@ -189,6 +183,7 @@ func (s*DJ) addSong(song dt.Song, points int, checkMap bool) bool {
 	}
 	
 	s.recent[songid] = B{}
+	s.songs = s.songs
 	heap.Push(&s.songs, songPoint)
 	
 	prev := s.recentlyPlayed[s.recentlyPlayedIndex]

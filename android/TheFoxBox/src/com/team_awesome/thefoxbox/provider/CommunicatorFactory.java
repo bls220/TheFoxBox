@@ -17,9 +17,7 @@ public class CommunicatorFactory {
 	private final int port;
 	/**
 	 * Creates a new factory for Communicators. Does not log in or anything; authentication is done lazily
-	 * on first call.
-	 * 
-	 * TODO: Require username(and password) at this point. 
+	 * on first call. Before using the factory you must call {@link #init(LoginInfo)}.
 	 * 
 	 * @param addr
 	 * @param port

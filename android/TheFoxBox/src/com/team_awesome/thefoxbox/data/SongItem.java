@@ -1,6 +1,6 @@
 package com.team_awesome.thefoxbox.data;
 
-public class SongItem {
+public final class SongItem {
 	public final String mAlbum;
 	public final String mTitle;
 	public final String mArtist;
