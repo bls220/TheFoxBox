@@ -3,7 +3,6 @@ package main
 import (
 	"./dt"
 	"sync"
-	"sort"
 	"fmt"
 	"./database"
 )
@@ -19,17 +18,72 @@ type SongPoint struct {
 type SongQueue struct {
 	songs []SongPoint
 }
-func (s*SongQueue) Len() int {
+func (s SongQueue) Len() int {
 	return len(s.songs)
 }
-func (s*SongQueue) Less(i, j int) bool {
-	return s.songs[i].points > s.songs[j].points
+func (s*SongQueue) Insert(so dt.Song, points int) {
+	spot := -1
+	for i, v := range s.songs {
+		if v.points < points {
+			spot = i
+			break
+		}
+	}
+	sp := SongPoint{so, points}
+	if spot == -1 {
+		// Didn't find, just append it and finish
+		s.songs = append(s.songs, sp)
+	} else {
+		// Insert into the list
+		llen := len(s.songs) - 1
+		// Make a spot for it
+		s.songs = append(s.songs, SongPoint{})
+		copy(s.songs[spot:llen],s.songs[spot+1:llen+1])
+		s.songs[spot] = sp
+	}
 }
-func (s*SongQueue) Swap(i, j int) {
-	s.songs[i], s.songs[j] = s.songs[j], s.songs[i]
+
+func (s*SongQueue) Dequeue() dt.Song {
+	ret := s.songs[0].s
+	s.songs = s.songs[1:]
+	return ret
 }
-func (s*SongQueue) Push(x SongPoint) {
-	s.songs = append(s.songs, x)
+
+// Returns true on error
+// TODO: Factor out repeated code in here and Insert
+func (s*SongQueue) Modify(id, points int) bool {
+	sl := s.songs
+	indx := -1
+	// Linear search through this short list won't be too bad
+	for i,x := range sl {
+		if x.s.Id == id {
+			indx = i
+			break
+		}
+	}
+	if indx == -1 {
+		return true
+	}
+	
+	pp := &sl[indx].points
+	newPoints := *pp + points
+	*pp = newPoints
+	
+	// Bubble up the value up to its sorted spot
+	last := &sl[indx]
+	for i := indx - 1; i >= 0; i-- {
+		cur := &sl[i]
+		
+		if cur.points > last.points {
+			// Stop when the current position has more points
+			break
+		}
+		
+		*last, *cur = *cur, *last
+		last = cur
+	}
+	
+	return false
 }
 
 //Singleton
@@ -68,10 +122,10 @@ func (s*DJ) GetQueue() ([]dt.Song, error) {
 		ret[0] = s.nowPlaying
 		workingSet = ret[1:]
 	} else {
-		workingset = ret[:]
+		workingSet = ret[:]
 	}
 	for i, v := range baseList {
-		workingset[i] = v.s
+		workingSet[i] = v.s
 	}
 	
 	return ret, nil
@@ -142,28 +196,16 @@ func (s*DJ) GetNextSong() (dt.Song, error) {
 	}
 	s.Lock()
 	defer s.Unlock()
-	return heap.Pop(&s.songs).(SongPoint).s, nil
+	return s.songs.Dequeue(), nil
 }
 
 func (s*DJ) Vote(songid, points int) string {
 	s.Lock()
 	defer s.Unlock()
-	indx := -1
-	// Linear search through this short list won't be too bad
-	for i,x := range s.songs.songs {
-		if x.s.Id == songid {
-			indx = i
-			break
-		}
-	}
-	if indx == -1 {
-		return "Could not find song in queue to vote on!"
-	}
 	
-	song := s.songs.songs[indx]
-	heap.Remove(&s.songs, indx)
-	song.points += points
-	heap.Push(&s.songs, song)
+	if s.songs.Modify(songid, points) {
+		return "Could not find song to vote on!"
+	}
 	return ""
 }
 
@@ -177,14 +219,8 @@ func (s*DJ) addSong(song dt.Song, points int, checkMap bool) bool {
 		}
 	}
 	
-	songPoint := SongPoint{
-		song,
-		points,
-	}
-	
 	s.recent[songid] = B{}
-	s.songs = s.songs
-	heap.Push(&s.songs, songPoint)
+	s.songs.Insert(song, points)
 	
 	prev := s.recentlyPlayed[s.recentlyPlayedIndex]
 	s.recentlyPlayed[s.recentlyPlayedIndex] = songid

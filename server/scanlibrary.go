@@ -1,3 +1,5 @@
+// +build !mock
+
 
 package main
 
@@ -14,10 +16,7 @@ type slHolder struct {
 }
 
 func Scan(dir string) error {
-	database.DestroyDB()
-	database.CreateUserTable()
-	database.CreateSongTable()
-	database.CreateVoteTable()
+	if e := database.RecreateDB(); e != nil { return e }
 
 	sl := slHolder{ make([]dt.Song, 0, 100) }
 	if err := filepath.Walk(dir, makeWalkFunc(dir, &sl)); err != nil {
@@ -28,11 +27,11 @@ func Scan(dir string) error {
 
 func makeWalkFunc(prefix string, sl*slHolder) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
 		if err != nil {
 			return err
+		}
+		if info.IsDir() {
+			return nil
 		}
 		
 		if !strings.HasSuffix(path, ".mp3") {

@@ -1,4 +1,6 @@
 
+// +build !mock
+
 package gop3
 
 
@@ -14,10 +16,6 @@ import (
 	"unsafe"
 	"errors"
 )
-
-func (m*Mp3Commander) PlaySong(path string) {
-	m.acts <- mp3Action{ PLAY, []string{path,} }
-}
 
 func (m*Mp3Commander) playSong(path string) error {
 	f := C.CString(path)
@@ -66,8 +64,4 @@ func (m*Mp3Commander) playSong(path string) error {
 	}
 	
 	return nil
-}
-
-func (m*Mp3Commander) WaitForSong() {
-	<-m.songWait
 }

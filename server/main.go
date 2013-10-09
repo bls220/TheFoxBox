@@ -16,7 +16,8 @@ func initFirstTime() {
 	if _, err := os.Stat(database.DB_PATH); err != nil {
 		fmt.Println("Indexing songs for the first time...")
 		if err = Scan(PREFIX); err != nil {
-			panic(err)
+			fmt.Println("Error scanning library:", err)
+			os.Exit(1)
 		}
 		fmt.Println("Indexing finished!")
 	}

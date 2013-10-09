@@ -1,20 +1,29 @@
+// +build !mock
+
 package database
 
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"os"
 )
 
 const DB_PATH string = "./thedb.db";
 
-func DestroyDB(){
-	os.Remove(DB_PATH)
+func RecreateDB() error {
+	if e := destroyDB(); e != nil { return e }
+	if e := createUserTable(); e != nil { return e }
+	if e := createSongTable(); e != nil { return e }
+	if e := createVoteTable(); e != nil { return e }
+	return nil
 }
 
-func CreateUserTable(){
-	createTable(
+func destroyDB() error {
+	return os.Remove(DB_PATH)
+}
+
+func createUserTable() error {
+	return createTable(
 		`create table user (
 			id 		integer not null primary key, 
 			name	text, 
@@ -23,8 +32,8 @@ func CreateUserTable(){
 		delete from user;`)
 }
 
-func CreateSongTable(){
-	createTable(
+func createSongTable() error {
+	return createTable(
 		`create table song (
 			id 		integer not null primary key, 
 			title 	text,
@@ -35,8 +44,8 @@ func CreateSongTable(){
 		delete from song;`)
 }
 
-func CreateVoteTable(){
-	createTable(
+func createVoteTable() error {
+	return createTable(
 		`create table vote (
 			id		integer not null primary key, 
 			song 	references song(id),
@@ -50,15 +59,12 @@ func CreateVoteTable(){
 }
 
 
-func createTable(table string){
+func createTable(table string) error {
 	db, err := sql.Open("sqlite3", DB_PATH)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer db.Close()
 	_, err = db.Exec(table)
-	if err != nil {
-		log.Printf("%q: %s\n", err, table)
-		return
-	}
+	db.Close()
+	return err
 }
